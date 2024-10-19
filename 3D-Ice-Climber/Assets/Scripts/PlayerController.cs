@@ -5,8 +5,9 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput;
-    private float speed = 2.0f;
-    private float jumpForce = 10.0f;
+    public float speed = 5.0f;
+    public float jumpForce = 12.0f;
+    private float enemyPushForce = 20.0f;
     private float xBound = 11.0f; 
     private bool isJumping = false;
     private bool isOnGround = false;
@@ -47,7 +48,19 @@ public class PlayerController : MonoBehaviour
     private void OnCollisionEnter(Collision collision){
         if(collision.gameObject.CompareTag("Ground")){
             isOnGround = true;
-        }   
+        }
+        if(collision.gameObject.CompareTag("Seal")){
+            Debug.Log("Ouch!");
+
+            // If the object we hit is the enemy
+            // Calculate Angle Between the collision point and the player
+            Vector3 dir = collision.contacts[0].point - transform.position;
+            // We then get the opposite (-Vector3) and normalize it
+            dir = -dir.normalized;
+            // And finally we add force in the direction of dir and multiply it by force. 
+            // This will push back the player
+            GetComponent<Rigidbody>().AddForce(dir * enemyPushForce, ForceMode.Impulse);
+        }
     }
 
     // Player jumping state control

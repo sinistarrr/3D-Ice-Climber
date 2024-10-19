@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - Enemy
+  - Seal
+  - Bird
+  - Falling Ice
   layers:
   - Default
   - TransparentFX
