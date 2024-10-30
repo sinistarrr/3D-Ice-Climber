@@ -3,15 +3,15 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {   
-    public GameObject seal;
+    public GameObject chicken;
     public GameObject bird;
     public GameObject iceFalling;
     private float xBound = 10.5f; 
-    private int sealsNumberLimit = 3;
+    private int chickensNumberLimit = 3;
     // Start is called before the first frame update
     void Start()
     {
-        StartCoroutine(SpawnSealPeriodically());
+        StartCoroutine(SpawnChickenPeriodically());
     }
 
     // Update is called once per frame
@@ -20,16 +20,21 @@ public class SpawnManager : MonoBehaviour
 
     }
 
-    private void SpawnSeal(){
-        int numberOfSealObjects = GameObject.FindGameObjectsWithTag("Seal").Length;
+    private void SpawnChicken(){
+        int numberOfChickenObjects = GameObject.FindGameObjectsWithTag("Chicken").Length;
 
-        if(numberOfSealObjects < sealsNumberLimit){
+        if(numberOfChickenObjects < chickensNumberLimit){
             Vector3 spawnPos = new Vector3(-xBound, transform.position.y, transform.position.z - 0.5f);
-            Instantiate(seal, spawnPos, seal.transform.rotation);
+            if(Random.Range(0, 2) == 0){
+                Instantiate(chicken, spawnPos, chicken.transform.rotation);
+            }
+            else{
+                Instantiate(chicken, spawnPos, Quaternion.Inverse(chicken.transform.rotation));
+            }
         }
     }
 
-    private IEnumerator SpawnSealPeriodically()
+    private IEnumerator SpawnChickenPeriodically()
     {
         int waitingTime;
 
@@ -39,7 +44,7 @@ public class SpawnManager : MonoBehaviour
             yield return new WaitForSeconds(waitingTime);
 
             Debug.Log("Spawning");
-            SpawnSeal();
+            SpawnChicken();
         }
         
     } 
