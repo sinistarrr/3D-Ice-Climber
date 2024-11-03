@@ -7,9 +7,9 @@ public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
     public float speed = 5.0f;
-    public float jumpForce = 13.0f;
+    public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
-    private float xBound = 11.0f; 
+    private float xBound = 17.0f; 
     private bool isJumping = false;
     private bool isOnGround = false;
     private bool jumpingKeyIsReleased = true;
@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     public bool isFiring = false;
     private bool gameOver = false;
     private bool jumpCooldownElapsed = false;
+    private int groundCollisions = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -50,10 +51,19 @@ public class PlayerController : MonoBehaviour
         if(isJumping && isOnGround){
             Jump();
             isJumping = false;
-            isOnGround = false;
             StartCoroutine(JumpCooldown());
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
+        }
+        //Debug.Log(groundCollisions);
+        if(groundCollisions > 0){
+            isOnGround = true;
+        }
+        else if(groundCollisions == 0){
+            isOnGround = false;
+        }
+        else{
+            groundCollisions = 0;
         }
     }
 
@@ -66,14 +76,16 @@ public class PlayerController : MonoBehaviour
             }
         }
         if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small") || collision.gameObject.CompareTag("Ground"))){
-            if(!jumpCooldownElapsed && !isOnGround && (collision.contacts[0].point.y >= (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2))){
-                isOnGround = true;
-                jumpCooldownElapsed = true;
-                playerAnim.enabled = true;
-                playerAnim.Rebind();
-                playerAnim.Update(0f);
-                isMovingHorizontally = false;
-                ManageHorizontalAnimation();
+            if(collision.contacts[0].point.y >= (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+                groundCollisions++;
+                if(!jumpCooldownElapsed){
+                    jumpCooldownElapsed = true;
+                    playerAnim.enabled = true;
+                    playerAnim.Rebind();
+                    playerAnim.Update(0f);
+                    isMovingHorizontally = false;
+                    ManageHorizontalAnimation();
+                }
             }
         }
         if(collision.gameObject.CompareTag("Chicken")){
@@ -92,6 +104,12 @@ public class PlayerController : MonoBehaviour
                 playerAnim.enabled = true;
             }
             ManageDeathAnimation();
+        }
+    }
+
+    private void OnCollisionExit(Collision collision) {
+        if(isOnGround){
+            groundCollisions--;
         }
     }
 

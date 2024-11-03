@@ -5,7 +5,7 @@ using UnityEngine;
 public class ChickenBehaviour : MonoBehaviour
 {
     public float speed = 2.0f;
-    private float xBound = 11.0f; 
+    private float xBound = 17.0f; 
     // Start is called before the first frame update
     void Start()
     {
