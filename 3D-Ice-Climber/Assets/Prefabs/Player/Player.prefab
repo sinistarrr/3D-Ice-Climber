@@ -1195,7 +1195,7 @@ MonoBehaviour:
   jumpInput: 0
   fireInput: 0
   speed: 5
-  jumpForce: 12
+  jumpForce: 13
   isFiring: 0
 --- !u!54 &8670815659683765363
 Rigidbody:
@@ -2219,6 +2219,10 @@ PrefabInstance:
     - target: {fileID: 423996663272635995, guid: e5b3cff67c7e35d4ab004761028be4df, type: 3}
       propertyPath: m_Name
       value: Weapon
+      objectReference: {fileID: 0}
+    - target: {fileID: 423996663272635995, guid: e5b3cff67c7e35d4ab004761028be4df, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5913657400357892084, guid: e5b3cff67c7e35d4ab004761028be4df, type: 3}
       propertyPath: m_LocalPosition.x

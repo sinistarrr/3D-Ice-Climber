@@ -5,7 +5,6 @@ using UnityEngine;
 public class WeaponBehaviour : MonoBehaviour
 {
     private PlayerController playerScript;
-    private float swordPushForce = 20.0f;
     // Start is called before the first frame update
     void Start()
     {

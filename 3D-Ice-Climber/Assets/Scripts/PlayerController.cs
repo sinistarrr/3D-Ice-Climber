@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
     public float speed = 5.0f;
-    public float jumpForce = 12.0f;
+    public float jumpForce = 13.0f;
     private float enemyPushForce = 20.0f;
     private float xBound = 11.0f; 
     private bool isJumping = false;
@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching = false;
     public bool isFiring = false;
     private bool gameOver = false;
+    private bool jumpCooldownElapsed = false;
 
     // Start is called before the first frame update
     void Start()
@@ -50,28 +51,29 @@ public class PlayerController : MonoBehaviour
             Jump();
             isJumping = false;
             isOnGround = false;
+            StartCoroutine(JumpCooldown());
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
         }
     }
 
     private void OnCollisionEnter(Collision collision){
-        if(collision.gameObject.CompareTag("Ground")){
+        if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small"))){
             // Destruction of Block
-            if(collision.contacts[0].point.y <= (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2) ){
-                // Debug.Log("Position of Player is : " + transform.position );
-                // Debug.Log("Position of Object is : " + collision.gameObject.transform.position );
-                // Debug.Log("LocalScale of Object is : " + collision.gameObject.transform.localScale );
-                // Debug.Log("LocalScale of Player is : " + transform.localScale );
-                // Debug.Log("Position of collision is : " + collision.contacts[0].point);
-                // Debug.Log("First substraction : " + (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2) );
-                // Debug.Log("Second substraction : " + (transform.position.y + GetComponent<Collider>().bounds.size.y / 2) );
-                // Debug.Log("Height of player is : " + GetComponent<Collider>().bounds.size.y);
-                // Debug.Log("Height of cube is : " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
-                Destroy(collision.gameObject);
+            if(collision.contacts[0].point.y <= (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+                collision.gameObject.SetActive(false);
+                playerAnim.enabled = false;
             }
-            else if(collision.contacts[0].point.y >= (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+        }
+        if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small") || collision.gameObject.CompareTag("Ground"))){
+            if(!jumpCooldownElapsed && !isOnGround && (collision.contacts[0].point.y >= (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2))){
                 isOnGround = true;
+                jumpCooldownElapsed = true;
+                playerAnim.enabled = true;
+                playerAnim.Rebind();
+                playerAnim.Update(0f);
+                isMovingHorizontally = false;
+                ManageHorizontalAnimation();
             }
         }
         if(collision.gameObject.CompareTag("Chicken")){
@@ -85,6 +87,10 @@ public class PlayerController : MonoBehaviour
             // This will push back the player
             GetComponent<Rigidbody>().AddForce(dir * enemyPushForce, ForceMode.Impulse);
             gameOver = true;
+            if (!playerAnim.isActiveAndEnabled)
+            {
+                playerAnim.enabled = true;
+            }
             ManageDeathAnimation();
         }
     }
@@ -201,6 +207,13 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(0.6f);
         playerAnim.SetInteger("WeaponType_int", 0);
         isFiring = false;
+    }
+
+    private IEnumerator JumpCooldown()
+    {
+        yield return new WaitForSeconds(0.2f);
+        jumpCooldownElapsed = false;
+        
     }
     
 }

@@ -11,6 +11,8 @@ TagManager:
   - Falling Ice
   - Weapon
   - Chicken
+  - Ground Breakable
+  - Ground Breakable Small
   layers:
   - Default
   - TransparentFX
