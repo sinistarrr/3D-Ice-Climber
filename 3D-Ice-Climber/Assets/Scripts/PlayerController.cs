@@ -21,7 +21,7 @@ public class PlayerController : MonoBehaviour
     public bool isFiring = false;
     private bool gameOver = false;
     private bool jumpCooldownElapsed = false;
-    private int groundCollisions = 0;
+    private int collisions = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -55,29 +55,27 @@ public class PlayerController : MonoBehaviour
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
         }
-        //Debug.Log(groundCollisions);
-        if(groundCollisions > 0){
-            isOnGround = true;
-        }
-        else if(groundCollisions == 0){
+        Debug.Log(collisions);
+        if(collisions == 0){
             isOnGround = false;
         }
         else{
-            groundCollisions = 0;
+            isOnGround = true;
         }
     }
 
     private void OnCollisionEnter(Collision collision){
         if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small"))){
             // Destruction of Block
-            if(collision.contacts[0].point.y <= (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+            if(collision.contacts[0].point.y == (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
                 collision.gameObject.SetActive(false);
                 playerAnim.enabled = false;
+                collisions--;
             }
         }
         if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small") || collision.gameObject.CompareTag("Ground"))){
-            if(collision.contacts[0].point.y >= (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
-                groundCollisions++;
+            collisions++;
+            if(collision.contacts[0].point.y == (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
                 if(!jumpCooldownElapsed){
                     jumpCooldownElapsed = true;
                     playerAnim.enabled = true;
@@ -108,9 +106,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void OnCollisionExit(Collision collision) {
-        if(isOnGround){
-            groundCollisions--;
-        }
+        collisions--;
     }
 
     // Player jumping state control

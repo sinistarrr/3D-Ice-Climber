@@ -128,11 +128,11 @@ public class SpawnManager : MonoBehaviour
                         
                     }
                     if(randomIndex != breakableBlocksPrefabs.Count){
-                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * breakableBlocksPrefabsBounds[randomIndex].x, originBlockPosition.y + i * rowHeight - breakableBlocksPrefabsBounds[randomIndex].y - ((originalBlockLocalScale.y - breakableBlocksPrefabs[randomIndex].transform.localScale.y) / 2), originBlockPosition.z);
+                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * breakableBlocksPrefabsBounds[randomIndex].x, originBlockPosition.y + i * rowHeight - breakableBlocksPrefabsBounds[randomIndex].y, originBlockPosition.z);
                         listOfGrounds[i].Add(Instantiate(breakableBlocksPrefabs[randomIndex], spawnPos, breakableBlocksPrefabs[randomIndex].transform.rotation));
                     }
                     else{
-                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * unbreakableBlockPrefabBounds.x, originBlockPosition.y + i * rowHeight - unbreakableBlockPrefabBounds.y - ((originalBlockLocalScale.y - unbreakableBlockPrefab.transform.localScale.y) / 2), originBlockPosition.z);
+                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * unbreakableBlockPrefabBounds.x, originBlockPosition.y + i * rowHeight - unbreakableBlockPrefabBounds.y, originBlockPosition.z);
                         listOfGrounds[i].Add(Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation));
                         listOfGrounds[i][j].SetActive(false);
                     }
