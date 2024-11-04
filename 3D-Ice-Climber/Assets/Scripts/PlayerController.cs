@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -65,17 +66,30 @@ public class PlayerController : MonoBehaviour
     }
 
     private void OnCollisionEnter(Collision collision){
-        if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small"))){
+        // Never returns null because of "root"
+        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
+
+        if(!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))){
             // Destruction of Block
-            if(collision.contacts[0].point.y == (collision.gameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+            if((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfGameObjectCollidedWith.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2))){
+                // Debug.Log("collision.contacts[0].point = " + collision.contacts[0].point);
+                // Debug.Log("collision.transform.position = " + collision.transform.position);
+                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
+                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
+                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
                 collision.gameObject.SetActive(false);
                 playerAnim.enabled = false;
                 collisions--;
             }
         }
-        if(!gameOver && (collision.gameObject.CompareTag("Ground Breakable") || collision.gameObject.CompareTag("Ground Breakable Small") || collision.gameObject.CompareTag("Ground"))){
+        if(!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground"))){
             collisions++;
-            if(collision.contacts[0].point.y == (collision.gameObject.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2)){
+            // Debug.Log("Math.Round(collision.contacts[0].point.y, 1) = " + Math.Round(collision.contacts[0].point.y, 1));
+            // Debug.Log("Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2) = " + Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1));
+            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
+            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
+            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
+            if(Math.Abs(Math.Round(collision.contacts[0].point.y, 1) - Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1)) <= 0.1f){
                 if(!jumpCooldownElapsed){
                     jumpCooldownElapsed = true;
                     playerAnim.enabled = true;
@@ -95,7 +109,7 @@ public class PlayerController : MonoBehaviour
             dir = -dir.normalized;
             // And finally we add force in the direction of dir and multiply it by force. 
             // This will push back the player
-            GetComponent<Rigidbody>().AddForce(dir * enemyPushForce, ForceMode.Impulse);
+            playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
             gameOver = true;
             if (!playerAnim.isActiveAndEnabled)
             {
@@ -142,7 +156,7 @@ public class PlayerController : MonoBehaviour
     // provides horizontal movement to the player
     private void MovePlayerHorizontally(){
         if(!isCrouching){
-            transform.Translate(Vector3.right * horizontalInput * speed * Time.deltaTime, Space.World);
+            playerRb.MovePosition(transform.position + Vector3.right * horizontalInput * speed * Time.deltaTime);
         }
     }
 

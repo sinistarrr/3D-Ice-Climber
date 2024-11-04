@@ -74,9 +74,9 @@ public class SpawnManager : MonoBehaviour
 
     private void BoundsVariablesInit(){
         GameObject unb = Instantiate(unbreakableBlockPrefab), br = Instantiate(breakableBlockPrefab), smbr = Instantiate(smallBreakableBlockPrefab);
-        unbreakableBlockPrefabBounds = unb.GetComponent<Collider>().bounds.size;
-        breakableBlockPrefabBounds = br.GetComponent<Collider>().bounds.size;
-        smallBreakableBlockPrefabBounds = smbr.GetComponent<Collider>().bounds.size;
+        unbreakableBlockPrefabBounds = unb.GetComponentInChildren<Collider>().bounds.size;
+        breakableBlockPrefabBounds = br.GetComponentInChildren<Collider>().bounds.size;
+        smallBreakableBlockPrefabBounds = smbr.GetComponentInChildren<Collider>().bounds.size;
         originalBlockLocalScale = unb.transform.localScale;
         Destroy(unb);
         Destroy(br);
@@ -128,7 +128,7 @@ public class SpawnManager : MonoBehaviour
                         
                     }
                     if(randomIndex != breakableBlocksPrefabs.Count){
-                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * breakableBlocksPrefabsBounds[randomIndex].x, originBlockPosition.y + i * rowHeight - breakableBlocksPrefabsBounds[randomIndex].y, originBlockPosition.z);
+                        Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount/2) * breakableBlocksPrefabsBounds[randomIndex].x, originBlockPosition.y + i * rowHeight - breakableBlocksPrefabsBounds[randomIndex].y - ((unbreakableBlockPrefabBounds.y - breakableBlocksPrefabsBounds[randomIndex].y) / 2), originBlockPosition.z);
                         listOfGrounds[i].Add(Instantiate(breakableBlocksPrefabs[randomIndex], spawnPos, breakableBlocksPrefabs[randomIndex].transform.rotation));
                     }
                     else{
