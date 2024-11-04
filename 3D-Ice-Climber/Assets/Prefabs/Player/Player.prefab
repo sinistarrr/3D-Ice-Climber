@@ -1104,7 +1104,7 @@ GameObject:
   - component: {fileID: 2464588985053990212}
   - component: {fileID: 8781142776254824774}
   - component: {fileID: 8670815659683765363}
-  - component: {fileID: 6466585024549991249}
+  - component: {fileID: 4892901692631239075}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1194,9 +1194,10 @@ MonoBehaviour:
   verticalInput: 0
   jumpInput: 0
   fireInput: 0
-  speed: 5
+  speed: 5.5
   jumpForce: 13
   isFiring: 0
+  collidingWithGround: 0
 --- !u!54 &8670815659683765363
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1223,9 +1224,9 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 120
-  m_CollisionDetection: 0
---- !u!65 &6466585024549991249
-BoxCollider:
+  m_CollisionDetection: 1
+--- !u!136 &4892901692631239075
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1242,9 +1243,11 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.91825044, y: 2.6855447, z: 1.0000002}
-  m_Center: {x: 0.000000049670536, y: 1.3348873, z: -1.4117238e-22}
+  serializedVersion: 2
+  m_Radius: 0.5000001
+  m_Height: 2.685545
+  m_Direction: 1
+  m_Center: {x: 0.00000004967054, y: 1.334887, z: -1.411724e-22}
 --- !u!1 &6328575466147470404
 GameObject:
   m_ObjectHideFlags: 0

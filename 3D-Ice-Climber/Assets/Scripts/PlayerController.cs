@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     public bool isFiring = false;
     private bool gameOver = false;
     private bool jumpCooldownElapsed = false;
+    public bool collidingWithGround = false;
     private int collisions = 0;
 
     // Start is called before the first frame update
@@ -56,8 +57,8 @@ public class PlayerController : MonoBehaviour
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
         }
-        Debug.Log(collisions);
-        if(collisions == 0){
+        //Debug.Log(collisions);
+        if(collisions == 0 || (collisions > 0 && !collidingWithGround)){
             isOnGround = false;
         }
         else{
@@ -68,6 +69,7 @@ public class PlayerController : MonoBehaviour
     private void OnCollisionEnter(Collision collision){
         // Never returns null because of "root"
         GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
+        collisions++;
 
         if(!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))){
             // Destruction of Block
@@ -83,13 +85,13 @@ public class PlayerController : MonoBehaviour
             }
         }
         if(!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground"))){
-            collisions++;
-            // Debug.Log("Math.Round(collision.contacts[0].point.y, 1) = " + Math.Round(collision.contacts[0].point.y, 1));
-            // Debug.Log("Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2) = " + Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1));
-            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
-            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
-            // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
+            Debug.Log("Math.Round(collision.contacts[0].point.y, 1) = " + Math.Round(collision.contacts[0].point.y, 1));
+            Debug.Log("Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2) = " + Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1));
+            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
+            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
+            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
             if(Math.Abs(Math.Round(collision.contacts[0].point.y, 1) - Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1)) <= 0.1f){
+                collidingWithGround = true;
                 if(!jumpCooldownElapsed){
                     jumpCooldownElapsed = true;
                     playerAnim.enabled = true;
@@ -98,6 +100,9 @@ public class PlayerController : MonoBehaviour
                     isMovingHorizontally = false;
                     ManageHorizontalAnimation();
                 }
+            }
+            else{
+                collidingWithGround = false;
             }
         }
         if(collision.gameObject.CompareTag("Chicken")){
