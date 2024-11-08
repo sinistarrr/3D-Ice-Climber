@@ -10,12 +10,15 @@ public class PlayerController : MonoBehaviour
     public float speed = 5.5f;
     public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
-    private float xBound = 17.0f;
+    private float xBound = 16.95f;
     private bool isJumping = false;
     private bool isOnGround = false;
     private bool jumpingKeyIsReleased = true;
     private bool isMovingRight = true;
     private bool isMovingHorizontally = false;
+    private SpawnManager spawnManager;
+    private GameObject planeLimit;
+    private Camera gameCamera;
     private Animator playerAnim;
     private Rigidbody playerRb;
     private bool isCrouching = false;
@@ -24,12 +27,25 @@ public class PlayerController : MonoBehaviour
     private bool jumpCooldownElapsed = false;
     public bool collidingWithGround = false;
     private int collisions = 0;
+    private int playerLine = 0;
+    private bool cameraIsMoving = false;
+    private float cameraSpeed = 3f;
+    private Vector3 initialCameraPosition;
+    private Vector3 initialLimitPosition;
+    private float rowHeight;
 
     // Start is called before the first frame update
     void Start()
     {
         playerRb = GetComponent<Rigidbody>();
         playerAnim = GetComponentInChildren<Animator>();
+        gameCamera = Camera.main;
+        spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
+        rowHeight = spawnManager.GetRowHeight();
+        planeLimit = GameObject.Find("PlaneLimit");
+        initialLimitPosition = planeLimit.transform.position;
+        initialCameraPosition = gameCamera.transform.position;
+
     }
 
     // Update is called once per frame
@@ -44,6 +60,7 @@ public class PlayerController : MonoBehaviour
             MovePlayerHorizontally();
             // locks player controls if in specific state like jumping
             LockPlayerControls();
+            ManageCameraAndLimitPosition();
         }
         ConstraintPlayerPosition();
 
@@ -82,23 +99,21 @@ public class PlayerController : MonoBehaviour
             // Destruction of Block
             if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfGameObjectCollidedWith.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
             {
-                // Debug.Log("collision.contacts[0].point = " + collision.contacts[0].point);
-                // Debug.Log("collision.transform.position = " + collision.transform.position);
-                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
-                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
-                // Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
-                collision.gameObject.SetActive(false);
+                parentOfGameObjectCollidedWith.SetActive(false);
                 playerAnim.enabled = false;
                 collisions--;
+                if(parentOfGameObjectCollidedWith.CompareTag("Ground Breakable")){
+                    GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
+                    if(brkGroundScript.IsCollidingWithChicken()){
+                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
+                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
+                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
+                    }
+                }
             }
         }
         if (!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground")))
         {
-            Debug.Log("Math.Round(collision.contacts[0].point.y, 1) = " + Math.Round(collision.contacts[0].point.y, 1));
-            Debug.Log("Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2) = " + Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1));
-            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size = " + collision.gameObject.GetComponent<Collider>().bounds.size);
-            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y = " + collision.gameObject.GetComponent<Collider>().bounds.size.y);
-            Debug.Log("collision.gameObject.GetComponent<Collider>().bounds.size.y / 2 " + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2);
             if (Math.Abs(Math.Round(collision.contacts[0].point.y, 1) - Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1)) <= 0.1f)
             {
                 collidingWithGround = true;
@@ -111,6 +126,14 @@ public class PlayerController : MonoBehaviour
                     isMovingHorizontally = false;
                     ManageHorizontalAnimation();
                 }
+                int groundLine = parentOfGameObjectCollidedWith.GetComponent<GroundBehaviour>().GetLine();
+                if(groundLine > playerLine){
+                    playerLine = groundLine;
+                    if(playerLine > spawnManager.GetCurrentMiddleRow()){
+                        spawnManager.AddRow();
+                        cameraIsMoving = true;
+                    }
+                }
             }
             else
             {
@@ -120,20 +143,22 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.CompareTag("Chicken"))
         {
 
-            // If the object we hit is the enemy
-            // Calculate Angle Between the collision point and the player
-            Vector3 dir = collision.contacts[0].point - transform.position;
-            // We then get the opposite (-Vector3) and normalize it
-            dir = -dir.normalized;
-            // And finally we add force in the direction of dir and multiply it by force. 
-            // This will push back the player
-            playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
-            gameOver = true;
-            if (!playerAnim.isActiveAndEnabled)
-            {
-                playerAnim.enabled = true;
+            if(!collision.gameObject.GetComponent<ChickenBehaviour>().IsDead()){
+                // If the object we hit is the enemy
+                // Calculate Angle Between the collision point and the player
+                Vector3 dir = collision.contacts[0].point - transform.position;
+                // We then get the opposite (-Vector3) and normalize it
+                dir = -dir.normalized;
+                // And finally we add force in the direction of dir and multiply it by force. 
+                // This will push back the player
+                playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
+                gameOver = true;
+                if (!playerAnim.isActiveAndEnabled)
+                {
+                    playerAnim.enabled = true;
+                }
+                ManageDeathAnimation();
             }
-            ManageDeathAnimation();
         }
     }
 
@@ -182,7 +207,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!isCrouching)
         {
-            playerRb.MovePosition(transform.position + Vector3.right * horizontalInput * speed * Time.deltaTime);
+            playerRb.MovePosition(transform.position + horizontalInput * speed * Time.deltaTime * Vector3.right);
         }
     }
 
@@ -272,6 +297,26 @@ public class PlayerController : MonoBehaviour
     {
         playerAnim.SetBool("Death_b", true);
         playerAnim.SetInteger("DeathType_int", 2);
+    }
+
+    private void ManageCameraAndLimitPosition(){
+        if(cameraIsMoving){
+
+            Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight;
+            Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight;
+            Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime);
+            Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime);
+            if(destinationPos == updatedPos){
+                cameraIsMoving = false;
+                initialCameraPosition = destinationPos;
+                initialLimitPosition = destinationLimitPos;
+                spawnManager.DestroyRow(spawnManager.GetCurrentRowCount() - 6);
+            }
+
+            planeLimit.transform.position = updatedLimitPos;
+            gameCamera.transform.position = updatedPos;
+
+        }
     }
 
     private IEnumerator FiringCooldown()

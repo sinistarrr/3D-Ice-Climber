@@ -14,12 +14,20 @@ public class WeaponBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
-    void OnTriggerEnter(Collider other) {
-        if((other.gameObject.CompareTag("Chicken") || other.gameObject.CompareTag("Falling Ice")) && playerScript.isFiring){
-            Destroy(other.gameObject);
+    void OnTriggerEnter(Collider other)
+    {
+        if(playerScript.isFiring){
+            if(other.gameObject.CompareTag("Chicken")){
+                ChickenBehaviour chickenScript = other.gameObject.GetComponent<ChickenBehaviour>();
+                chickenScript.SetDeathActivation(true);
+                other.gameObject.transform.RotateAround(other.gameObject.transform.position, other.gameObject.transform.up, 180f);
+            }
+            if(other.gameObject.CompareTag("Falling Ice")){
+                Destroy(other.gameObject);
+            }
         }
     }
 

@@ -2,9 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlaneLimitBehaviour : MonoBehaviour
+public class CameraBehaviour : MonoBehaviour
 {
-
     // Start is called before the first frame update
     void Start()
     {
@@ -15,9 +14,5 @@ public class PlaneLimitBehaviour : MonoBehaviour
     void Update()
     {
         
-    }
-
-    private void OnTriggerEnter(Collider other){
-        Destroy(other.gameObject);
     }
 }
