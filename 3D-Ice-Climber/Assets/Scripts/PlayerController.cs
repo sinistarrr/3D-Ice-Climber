@@ -103,8 +103,10 @@ public class PlayerController : MonoBehaviour
                 playerAnim.enabled = false;
                 collisions--;
                 if(parentOfGameObjectCollidedWith.CompareTag("Ground Breakable")){
+                    Debug.Log("HELLO2");
                     GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
                     if(brkGroundScript.IsCollidingWithChicken()){
+                        Debug.Log("HELLO");
                         brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
                         brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
                         brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
@@ -126,7 +128,7 @@ public class PlayerController : MonoBehaviour
                     isMovingHorizontally = false;
                     ManageHorizontalAnimation();
                 }
-                int groundLine = parentOfGameObjectCollidedWith.GetComponent<GroundBehaviour>().GetLine();
+                int groundLine = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine();
                 if(groundLine > playerLine){
                     playerLine = groundLine;
                     if(playerLine > spawnManager.GetCurrentMiddleRow()){

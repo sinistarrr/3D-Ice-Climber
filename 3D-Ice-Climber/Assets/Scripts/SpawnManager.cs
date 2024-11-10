@@ -148,14 +148,14 @@ public class SpawnManager : MonoBehaviour
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + rowNumber * rowHeight, originBlockPosition.z);
                     GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-                    unbrGameObject.GetComponent<GroundBehaviour>().SetLine(rowNumber);
+                    unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(rowNumber);
                     listOfGrounds[rowNumber].Add(unbrGameObject);
                 }
                 else
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + j * breakableBlockPrefabBounds.x, originBlockPosition.y + rowNumber * rowHeight, originBlockPosition.z);
                     GameObject brGameObject = Instantiate(breakableBlockPrefab, spawnPos, breakableBlockPrefab.transform.rotation);
-                    brGameObject.GetComponent<GroundBehaviour>().SetLine(rowNumber);
+                    brGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(rowNumber);
                     listOfGrounds[rowNumber].Add(brGameObject);
                 }
             }
@@ -190,14 +190,14 @@ public class SpawnManager : MonoBehaviour
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount / 2) * breakableBlocksPrefabsBounds[randomIndex].x, originBlockPosition.y + rowNumber * rowHeight - breakableBlocksPrefabsBounds[randomIndex].y - ((unbreakableBlockPrefabBounds.y - breakableBlocksPrefabsBounds[randomIndex].y) / 2), originBlockPosition.z);
                     GameObject brGameObject = Instantiate(breakableBlocksPrefabs[randomIndex], spawnPos, breakableBlocksPrefabs[randomIndex].transform.rotation);
-                    brGameObject.GetComponent<GroundBehaviour>().SetLine(rowNumber);
+                    brGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(rowNumber);
                     listOfGrounds[rowNumber].Add(brGameObject);
                 }
                 else
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + (j - blockCount / 2) * unbreakableBlockPrefabBounds.x, originBlockPosition.y + rowNumber * rowHeight - unbreakableBlockPrefabBounds.y, originBlockPosition.z);
                     GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-                    unbrGameObject.GetComponent<GroundBehaviour>().SetLine(rowNumber);
+                    unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(rowNumber);
                     listOfGrounds[rowNumber].Add(unbrGameObject);
                     listOfGrounds[rowNumber][j].SetActive(false);
                 }

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8286480105665164906}
   - component: {fileID: 5970561365047291262}
   - component: {fileID: 2600933104063294528}
+  - component: {fileID: 6959494776776446028}
   m_Layer: 0
   m_Name: Crate_01 (1)
   m_TagString: Untagged
@@ -105,6 +106,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.554324, y: 1.5543231, z: 1.5543228}
   m_Center: {x: 0, y: 0.77716154, z: 0}
+--- !u!114 &6959494776776446028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6592401109027150686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 706cbb035317cd64c874fcd5e9fdec07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7631396313484085834
 GameObject:
   m_ObjectHideFlags: 0
@@ -114,7 +127,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3342814389620734269}
-  - component: {fileID: -2689400329371925993}
   m_Layer: 0
   m_Name: Ground_Unbreakable
   m_TagString: Ground
@@ -138,15 +150,3 @@ Transform:
   - {fileID: 9106711030522754574}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-2689400329371925993
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7631396313484085834}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 706cbb035317cd64c874fcd5e9fdec07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
