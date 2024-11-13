@@ -209,10 +209,46 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    public void SpawnCloudLevelFirstStage()
+    {
+        HashSet<int> firstLineHoles = new HashSet<int>() {8, 9, 16, 17, 24, 25 };
+
+        for (int j = 0; j < (blockCount / 2); j++)
+        {
+            Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight, originBlockPosition.z);
+            GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+            unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount);
+            if (firstLineHoles.Contains(j))
+            {
+                unbrGameObject.SetActive(false);
+            }
+        }
+        IncrementCurrentRowCount();
+        
+    }
+    public void SpawnCloudLevelSecondStage(){
+        HashSet<int> secondLineHoles = new HashSet<int>() { 0, 1, 2, 3, 4, 5, 6, 11, 12, 13, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33 };
+
+        for (int j = 0; j < (blockCount / 2); j++)
+        {
+            Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight + rowHeight / 1.5f, originBlockPosition.z);
+            GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+            unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount+1);
+            if (secondLineHoles.Contains(j))
+            {
+                unbrGameObject.SetActive(false);
+            }
+        }
+        IncrementCurrentRowCount();
+    }
+
+    public void SpawnCloudLevelFinalStage(){
+        IncrementCurrentRowCount();
+    }
     public void AddRow()
     {
+        CreateRow(currentRowCount);
         IncrementCurrentRowCount();
-        CreateRow(currentRowCount - 1);
     }
     public void DestroyRow(int rowNumber)
     {
@@ -236,5 +272,10 @@ public class SpawnManager : MonoBehaviour
     public void IncrementCurrentRowCount()
     {
         currentRowCount++;
+    }
+
+    public int GetMaxRow()
+    {
+        return maxRowCount;
     }
 }

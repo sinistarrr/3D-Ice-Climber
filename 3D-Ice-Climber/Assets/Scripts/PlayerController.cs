@@ -7,7 +7,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
-    public float speed = 5.5f;
+    public float speed = 12.0f;
     public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
     private float xBound = 16.95f;
@@ -28,11 +28,13 @@ public class PlayerController : MonoBehaviour
     public bool collidingWithGround = false;
     private int collisions = 0;
     private int playerLine = 0;
-    private bool cameraIsMoving = false;
-    private float cameraSpeed = 3f;
+    private float cameraMoves = 0;
+    private bool cameraIsMovingInTheClouds = false;
+    private float cameraSpeed = 6f;
     private Vector3 initialCameraPosition;
     private Vector3 initialLimitPosition;
     private float rowHeight;
+    private bool cloudLevelStateActivated = false;
 
     // Start is called before the first frame update
     void Start()
@@ -94,58 +96,85 @@ public class PlayerController : MonoBehaviour
         GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
         collisions++;
 
-        if (!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small")))
+        if (!gameOver)
         {
-            // Destruction of Block
-            if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfGameObjectCollidedWith.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
+            if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground"))
             {
-                parentOfGameObjectCollidedWith.SetActive(false);
-                playerAnim.enabled = false;
-                collisions--;
-                if(parentOfGameObjectCollidedWith.CompareTag("Ground Breakable")){
-                    Debug.Log("HELLO2");
-                    GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
-                    if(brkGroundScript.IsCollidingWithChicken()){
-                        Debug.Log("HELLO");
-                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
-                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
-                        brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
-                    }
-                }
-            }
-        }
-        if (!gameOver && (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground")))
-        {
-            if (Math.Abs(Math.Round(collision.contacts[0].point.y, 1) - Math.Round(parentOfGameObjectCollidedWith.transform.position.y + collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 1)) <= 0.1f)
-            {
-                collidingWithGround = true;
-                if (!jumpCooldownElapsed)
-                {
-                    jumpCooldownElapsed = true;
-                    playerAnim.enabled = true;
-                    playerAnim.Rebind();
-                    playerAnim.Update(0f);
-                    isMovingHorizontally = false;
-                    ManageHorizontalAnimation();
-                }
-                int groundLine = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine();
-                if(groundLine > playerLine){
-                    playerLine = groundLine;
-                    if(playerLine > spawnManager.GetCurrentMiddleRow()){
-                        spawnManager.AddRow();
-                        cameraIsMoving = true;
-                    }
-                }
-            }
-            else
-            {
-                collidingWithGround = false;
-            }
-        }
-        if (collision.gameObject.CompareTag("Chicken"))
-        {
 
-            if(!collision.gameObject.GetComponent<ChickenBehaviour>().IsDead()){
+                if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))
+                {
+                    // Destruction of Block
+                    if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfGameObjectCollidedWith.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
+                    {
+                        parentOfGameObjectCollidedWith.SetActive(false);
+                        playerAnim.enabled = false;
+                        collisions--;
+                        Debug.Log("Line of the block is : " + parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine());
+                        if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable"))
+                        {
+                            Debug.Log("HELLO2");
+                            // Debug.Log("Line of the block is : " + parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine());
+                            GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
+                            if (brkGroundScript.IsCollidingWithChicken())
+                            {
+                                Debug.Log("HELLO");
+                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
+                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
+                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
+                            }
+                        }
+                    }
+                }
+                if (collision.contacts[0].point.y > parentOfGameObjectCollidedWith.transform.position.y)
+                {
+                    collidingWithGround = true;
+                    if (!jumpCooldownElapsed)
+                    {
+                        jumpCooldownElapsed = true;
+                        playerAnim.enabled = true;
+                        playerAnim.Rebind();
+                        playerAnim.Update(0f);
+                        isMovingHorizontally = false;
+                        ManageHorizontalAnimation();
+                    }
+                    int groundLine = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine();
+                    if (groundLine > playerLine)
+                    {
+                        playerLine = groundLine;
+                        if (!cloudLevelStateActivated)
+                        {
+                            if (playerLine > spawnManager.GetMaxRow() - 3)
+                            {
+                                cloudLevelStateActivated = true;
+                                spawnManager.SpawnCloudLevelFirstStage();
+                                cameraMoves = 1;
+                            }
+                            else if (playerLine > spawnManager.GetCurrentMiddleRow())
+                            {
+                                spawnManager.AddRow();
+                                cameraMoves = 1;
+                            }
+                        }
+                        else{
+                            if (playerLine == spawnManager.GetMaxRow() - 1){
+                                spawnManager.SpawnCloudLevelSecondStage();
+                                cameraMoves = 1;
+                            }
+                            else if (playerLine == spawnManager.GetMaxRow() + 1){
+                                spawnManager.SpawnCloudLevelFinalStage();
+                                cameraMoves = 3;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    collidingWithGround = false;
+                }
+            }
+            if (collision.gameObject.CompareTag("Chicken"))
+            {
+
                 // If the object we hit is the enemy
                 // Calculate Angle Between the collision point and the player
                 Vector3 dir = collision.contacts[0].point - transform.position;
@@ -160,6 +189,7 @@ public class PlayerController : MonoBehaviour
                     playerAnim.enabled = true;
                 }
                 ManageDeathAnimation();
+
             }
         }
     }
@@ -301,24 +331,32 @@ public class PlayerController : MonoBehaviour
         playerAnim.SetInteger("DeathType_int", 2);
     }
 
-    private void ManageCameraAndLimitPosition(){
-        if(cameraIsMoving){
-
-            Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight;
-            Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight;
-            Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime);
-            Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime);
-            if(destinationPos == updatedPos){
-                cameraIsMoving = false;
-                initialCameraPosition = destinationPos;
-                initialLimitPosition = destinationLimitPos;
-                spawnManager.DestroyRow(spawnManager.GetCurrentRowCount() - 6);
-            }
-
-            planeLimit.transform.position = updatedLimitPos;
-            gameCamera.transform.position = updatedPos;
-
+    private void ManageCameraAndLimitPosition()
+    {
+        if (cameraMoves > 0)
+        {
+            UpdateCameraAndLimitPosition();
         }
+    }
+
+    private void UpdateCameraAndLimitPosition(){
+        Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight * cameraMoves;
+        Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight * cameraMoves;
+        Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoves);
+        Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime * cameraMoves);
+        if (destinationPos == updatedPos)
+        {
+            initialCameraPosition = destinationPos;
+            initialLimitPosition = destinationLimitPos;
+            for(int i = 0; i < cameraMoves; i++){
+                Debug.Log("IM DELETING " + spawnManager.GetCurrentRowCount());
+                spawnManager.DestroyRow(spawnManager.GetCurrentRowCount() - 6 + i);
+            }
+            cameraMoves = 0;
+        }
+
+        planeLimit.transform.position = updatedLimitPos;
+        gameCamera.transform.position = updatedPos;
     }
 
     private IEnumerator FiringCooldown()
