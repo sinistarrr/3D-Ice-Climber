@@ -6,7 +6,7 @@ public class CloudBehaviour : MonoBehaviour
 {   
     public float speed = 5.0f;
     private bool isMovingOnTheRight;
-    private float xBound = 11.0f; 
+    private float xBound = 22.0f;
     // Start is called before the first frame update
     void Start()
     {
@@ -26,7 +26,7 @@ public class CloudBehaviour : MonoBehaviour
     }
 
     // provides horizontal movement to the cloud
-    private void moveCloudHorizontally(){
+    public void moveCloudHorizontally(){
         if(isMovingOnTheRight){
             transform.Translate(Vector3.right * speed * Time.deltaTime, Space.World);
         }
@@ -43,5 +43,13 @@ public class CloudBehaviour : MonoBehaviour
         else if(transform.position.x > xBound){
             transform.position = new Vector3(-xBound, transform.position.y, transform.position.z);
         }
+    }
+
+    public bool IsMovingRight(){
+        return isMovingOnTheRight;
+    }
+
+    public float GetSpeed(){
+        return speed;
     }
 }

@@ -11,6 +11,7 @@ public class SpawnManager : MonoBehaviour
     public GameObject chickenPrefab;
     public GameObject birdPrefab;
     public GameObject iceFallingPrefab;
+    public GameObject cloudPrefab;
     public List<List<GameObject>> listOfGrounds;
     private Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
     private Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds;
@@ -45,7 +46,7 @@ public class SpawnManager : MonoBehaviour
 
     }
 
-    private void SpawnChicken()
+    private bool SpawnChicken()
     {
         List<GameObject> gameObjects = GameObject.FindGameObjectsWithTag("Chicken").ToList();
         int numberOfChickenObjects = gameObjects.Count();
@@ -53,7 +54,10 @@ public class SpawnManager : MonoBehaviour
         if (numberOfChickenObjects < chickensNumberLimit)
         {
             int lineToSpawnChickenOn = GetLineToSpawnChickenOn(gameObjects, numberOfChickenObjects);
-            if (lineToSpawnChickenOn != -1)
+            if(lineToSpawnChickenOn >= maxRowCount ){
+                return false;
+            }
+            else if (lineToSpawnChickenOn != -1)
             {
                 GameObject chickenGameObject;
                 Vector3 spawnPos = new Vector3(-xBound, transform.position.y - spawnManagerPositionYOffset + (lineToSpawnChickenOn * rowHeight), transform.position.z - 0.5f);
@@ -71,6 +75,7 @@ public class SpawnManager : MonoBehaviour
 
             }
         }
+        return true;
     }
 
     private int GetLineToSpawnChickenOn(List<GameObject> gameObjects, int numberOfChickenObjects)
@@ -105,7 +110,9 @@ public class SpawnManager : MonoBehaviour
 
             yield return new WaitForSeconds(waitingTime);
 
-            SpawnChicken();
+            if(!SpawnChicken()){
+                break;
+            }
         }
 
     }
@@ -209,41 +216,77 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    public void SpawnMountainBorders()
+    {
+        int maxNumberOfWalls = 7;
+        int maxNumberOfLinesPerWall = 8;
+        int numberOfLinesPerWall = 8;
+        int maxNumberOfBlocksOnALine = 3;
+        for (int i = 0; i < maxNumberOfWalls; i++)
+        {
+            if(i == (maxNumberOfWalls - 1)){
+                numberOfLinesPerWall = 3;
+            }
+            for (int j = 0; j < numberOfLinesPerWall; j++)
+            {
+                for (int k = 0; k < maxNumberOfBlocksOnALine; k++)
+                {
+                    Vector3 spawnPos = new Vector3(originBlockPosition.x + (i + k + 1) * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight + unbreakableBlockPrefabBounds.y * (j + i * maxNumberOfLinesPerWall), originBlockPosition.z);
+                    GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+                    unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(-1);
+
+                    spawnPos = new Vector3(originBlockPosition.x + (blockCount / 2 - 2) * unbreakableBlockPrefabBounds.x - (i + k) * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight + unbreakableBlockPrefabBounds.y * (j + i * maxNumberOfLinesPerWall), originBlockPosition.z);
+                    unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+                    unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(-1);
+                }
+            }
+        }
+
+    }
     public void SpawnCloudLevelFirstStage()
     {
-        HashSet<int> firstLineHoles = new HashSet<int>() {8, 9, 16, 17, 24, 25 };
+        HashSet<int> firstLineHoles = new HashSet<int>() { 8, 9, 16, 17, 24, 25 };
 
         for (int j = 0; j < (blockCount / 2); j++)
         {
-            Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight, originBlockPosition.z);
-            GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-            unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount);
-            if (firstLineHoles.Contains(j))
+            if (!firstLineHoles.Contains(j))
             {
-                unbrGameObject.SetActive(false);
+                Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight, originBlockPosition.z);
+                GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+                unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount);
             }
         }
         IncrementCurrentRowCount();
-        
+
     }
-    public void SpawnCloudLevelSecondStage(){
+    public void SpawnCloudLevelSecondStage()
+    {
         HashSet<int> secondLineHoles = new HashSet<int>() { 0, 1, 2, 3, 4, 5, 6, 11, 12, 13, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33 };
 
         for (int j = 0; j < (blockCount / 2); j++)
         {
-            Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight + rowHeight / 1.5f, originBlockPosition.z);
-            GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-            unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount+1);
-            if (secondLineHoles.Contains(j))
+
+            if (!secondLineHoles.Contains(j))
             {
-                unbrGameObject.SetActive(false);
+                Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + maxRowCount * rowHeight + rowHeight / 1.5f, originBlockPosition.z);
+                GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+                unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount + 1);
             }
         }
         IncrementCurrentRowCount();
     }
 
-    public void SpawnCloudLevelFinalStage(){
+    public void SpawnCloudLevelFinalStage()
+    {
+        int cloudLine = maxRowCount + 2;
+        Vector3 spawnPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + cloudLine * rowHeight, cloudPrefab.transform.position.z - 0.5f);
+        SpawnCloudAtCoordinates(spawnPos, cloudLine);
         IncrementCurrentRowCount();
+    }
+
+    public void SpawnCloudAtCoordinates(Vector3 spawnPos, int lineCount){
+        GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
+        cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
     }
     public void AddRow()
     {

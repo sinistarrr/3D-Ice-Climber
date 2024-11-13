@@ -7,7 +7,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
-    public float speed = 12.0f;
+    public float speed = 5.5f;
     public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
     private float xBound = 16.95f;
@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
     private bool isMovingHorizontally = false;
     private SpawnManager spawnManager;
     private GameObject planeLimit;
+    private GameObject savedCloud;
     private Camera gameCamera;
     private Animator playerAnim;
     private Rigidbody playerRb;
@@ -29,12 +30,12 @@ public class PlayerController : MonoBehaviour
     private int collisions = 0;
     private int playerLine = 0;
     private float cameraMoves = 0;
-    private bool cameraIsMovingInTheClouds = false;
     private float cameraSpeed = 6f;
     private Vector3 initialCameraPosition;
     private Vector3 initialLimitPosition;
     private float rowHeight;
     private bool cloudLevelStateActivated = false;
+    private bool isOnCloud = false;
 
     // Start is called before the first frame update
     void Start()
@@ -88,6 +89,7 @@ public class PlayerController : MonoBehaviour
         {
             isOnGround = true;
         }
+        AddHorizontalMovementIfPlayerIsOnCloud();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -98,7 +100,8 @@ public class PlayerController : MonoBehaviour
 
         if (!gameOver)
         {
-            if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small") || parentOfGameObjectCollidedWith.CompareTag("Ground"))
+            if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small")
+                || parentOfGameObjectCollidedWith.CompareTag("Ground") || parentOfGameObjectCollidedWith.CompareTag("Cloud"))
             {
 
                 if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))
@@ -112,12 +115,9 @@ public class PlayerController : MonoBehaviour
                         Debug.Log("Line of the block is : " + parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine());
                         if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable"))
                         {
-                            Debug.Log("HELLO2");
-                            // Debug.Log("Line of the block is : " + parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine());
                             GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
                             if (brkGroundScript.IsCollidingWithChicken())
                             {
-                                Debug.Log("HELLO");
                                 brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
                                 brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
                                 brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
@@ -128,6 +128,11 @@ public class PlayerController : MonoBehaviour
                 if (collision.contacts[0].point.y > parentOfGameObjectCollidedWith.transform.position.y)
                 {
                     collidingWithGround = true;
+                    if (parentOfGameObjectCollidedWith.CompareTag("Cloud"))
+                    {
+                        isOnCloud = true;
+                        savedCloud = parentOfGameObjectCollidedWith;
+                    }
                     if (!jumpCooldownElapsed)
                     {
                         jumpCooldownElapsed = true;
@@ -147,6 +152,7 @@ public class PlayerController : MonoBehaviour
                             {
                                 cloudLevelStateActivated = true;
                                 spawnManager.SpawnCloudLevelFirstStage();
+                                spawnManager.SpawnMountainBorders();
                                 cameraMoves = 1;
                             }
                             else if (playerLine > spawnManager.GetCurrentMiddleRow())
@@ -155,12 +161,15 @@ public class PlayerController : MonoBehaviour
                                 cameraMoves = 1;
                             }
                         }
-                        else{
-                            if (playerLine == spawnManager.GetMaxRow() - 1){
+                        else
+                        {
+                            if (playerLine == spawnManager.GetMaxRow() - 1)
+                            {
                                 spawnManager.SpawnCloudLevelSecondStage();
                                 cameraMoves = 1;
                             }
-                            else if (playerLine == spawnManager.GetMaxRow() + 1){
+                            else if (playerLine == spawnManager.GetMaxRow() + 1)
+                            {
                                 spawnManager.SpawnCloudLevelFinalStage();
                                 cameraMoves = 3;
                             }
@@ -196,7 +205,12 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionExit(Collision collision)
     {
+        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
         collisions--;
+        if (parentOfGameObjectCollidedWith.CompareTag("Cloud"))
+        {
+            isOnCloud = false;
+        }
     }
 
     // Player jumping state control
@@ -339,7 +353,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void UpdateCameraAndLimitPosition(){
+    private void UpdateCameraAndLimitPosition()
+    {
         Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight * cameraMoves;
         Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight * cameraMoves;
         Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoves);
@@ -348,7 +363,8 @@ public class PlayerController : MonoBehaviour
         {
             initialCameraPosition = destinationPos;
             initialLimitPosition = destinationLimitPos;
-            for(int i = 0; i < cameraMoves; i++){
+            for (int i = 0; i < cameraMoves; i++)
+            {
                 Debug.Log("IM DELETING " + spawnManager.GetCurrentRowCount());
                 spawnManager.DestroyRow(spawnManager.GetCurrentRowCount() - 6 + i);
             }
@@ -371,6 +387,25 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(0.2f);
         jumpCooldownElapsed = false;
 
+    }
+
+    private void MovePlayerAlongSideCloud(GameObject cloudPrefab)
+    {
+        CloudBehaviour cloudScript = cloudPrefab.GetComponent<CloudBehaviour>();
+        
+        if(cloudScript.IsMovingRight()){
+            transform.Translate(Vector3.right * cloudScript.GetSpeed() * Time.deltaTime, Space.World);
+        }
+        else{
+            transform.Translate(-Vector3.right * cloudScript.GetSpeed() * Time.deltaTime, Space.World);  
+        }
+        
+    }
+
+    private void AddHorizontalMovementIfPlayerIsOnCloud(){
+        if(isOnCloud){
+            MovePlayerAlongSideCloud(savedCloud);
+        }
     }
 
 }

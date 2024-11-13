@@ -11211,6 +11211,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8781142776254824774, guid: ab28d8382463ff147ab0bd9c54d67197, type: 3}
+      propertyPath: speed
+      value: 5.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11921,6 +11925,7 @@ MonoBehaviour:
   chickenPrefab: {fileID: 1935375252813755643, guid: 69839947f24d3c648a1c8dcb47d684d1, type: 3}
   birdPrefab: {fileID: 921067947296030110, guid: 791a2c2dbdbb87b4289df5260b96cdee, type: 3}
   iceFallingPrefab: {fileID: 884655343268232479, guid: 15f4de3a35c024a45bb5a41451b973da, type: 3}
+  cloudPrefab: {fileID: 1858685228182508717, guid: 1c8fd0935057287478e8efb8f9437603, type: 3}
 --- !u!4 &2127442681 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2531364503514436994, guid: 63e49baefc7726d48b25c12a022e3193, type: 3}
