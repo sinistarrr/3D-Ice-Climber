@@ -29,13 +29,14 @@ public class PlayerController : MonoBehaviour
     public bool collidingWithGround = false;
     private int collisions = 0;
     private int playerLine = 0;
-    private float cameraMoves = 0;
+    private float cameraMoveDistance = 0;
     private float cameraSpeed = 6f;
     private Vector3 initialCameraPosition;
     private Vector3 initialLimitPosition;
     private float rowHeight;
     private bool cloudLevelStateActivated = false;
     private bool isOnCloud = false;
+    private bool playerReachedFourthStage = false;
 
     // Start is called before the first frame update
     void Start()
@@ -153,12 +154,12 @@ public class PlayerController : MonoBehaviour
                                 cloudLevelStateActivated = true;
                                 spawnManager.SpawnCloudLevelFirstStage();
                                 spawnManager.SpawnMountainBorders();
-                                cameraMoves = 1;
+                                cameraMoveDistance = 1;
                             }
                             else if (playerLine > spawnManager.GetCurrentMiddleRow())
                             {
                                 spawnManager.AddRow();
-                                cameraMoves = 1;
+                                cameraMoveDistance = 1;
                             }
                         }
                         else
@@ -166,12 +167,20 @@ public class PlayerController : MonoBehaviour
                             if (playerLine == spawnManager.GetMaxRow() - 1)
                             {
                                 spawnManager.SpawnCloudLevelSecondStage();
-                                cameraMoves = 1;
+                                cameraMoveDistance = 1;
                             }
                             else if (playerLine == spawnManager.GetMaxRow() + 1)
                             {
-                                spawnManager.SpawnCloudLevelFinalStage();
-                                cameraMoves = 3;
+                                spawnManager.SpawnCloudLevelThirdStage();
+                                cameraMoveDistance = 3;
+                            }
+                            else if (!playerReachedFourthStage && (playerLine == (spawnManager.GetMaxRow() + 6) || playerLine == (spawnManager.GetMaxRow() + 5))){
+                                spawnManager.SpawnCloudLevelFourthStage();
+                                playerReachedFourthStage = true;
+                                cameraMoveDistance = 3;
+                            }
+                            else if (playerLine == spawnManager.GetMaxRow() + 8){
+                                cameraMoveDistance = 3;
                             }
                         }
                     }
@@ -347,7 +356,7 @@ public class PlayerController : MonoBehaviour
 
     private void ManageCameraAndLimitPosition()
     {
-        if (cameraMoves > 0)
+        if (cameraMoveDistance > 0)
         {
             UpdateCameraAndLimitPosition();
         }
@@ -355,20 +364,15 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateCameraAndLimitPosition()
     {
-        Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight * cameraMoves;
-        Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight * cameraMoves;
-        Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoves);
-        Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime * cameraMoves);
+        Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight * cameraMoveDistance;
+        Vector3 destinationLimitPos = initialLimitPosition + Vector3.up * rowHeight * cameraMoveDistance;
+        Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoveDistance);
+        Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime * cameraMoveDistance);
         if (destinationPos == updatedPos)
         {
             initialCameraPosition = destinationPos;
             initialLimitPosition = destinationLimitPos;
-            for (int i = 0; i < cameraMoves; i++)
-            {
-                Debug.Log("IM DELETING " + spawnManager.GetCurrentRowCount());
-                spawnManager.DestroyRow(spawnManager.GetCurrentRowCount() - 6 + i);
-            }
-            cameraMoves = 0;
+            cameraMoveDistance = 0;
         }
 
         planeLimit.transform.position = updatedLimitPos;
@@ -392,18 +396,22 @@ public class PlayerController : MonoBehaviour
     private void MovePlayerAlongSideCloud(GameObject cloudPrefab)
     {
         CloudBehaviour cloudScript = cloudPrefab.GetComponent<CloudBehaviour>();
-        
-        if(cloudScript.IsMovingRight()){
+
+        if (cloudScript.IsMovingRight())
+        {
             transform.Translate(Vector3.right * cloudScript.GetSpeed() * Time.deltaTime, Space.World);
         }
-        else{
-            transform.Translate(-Vector3.right * cloudScript.GetSpeed() * Time.deltaTime, Space.World);  
+        else
+        {
+            transform.Translate(-Vector3.right * cloudScript.GetSpeed() * Time.deltaTime, Space.World);
         }
-        
+
     }
 
-    private void AddHorizontalMovementIfPlayerIsOnCloud(){
-        if(isOnCloud){
+    private void AddHorizontalMovementIfPlayerIsOnCloud()
+    {
+        if (isOnCloud)
+        {
             MovePlayerAlongSideCloud(savedCloud);
         }
     }
