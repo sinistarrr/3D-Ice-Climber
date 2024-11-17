@@ -13,7 +13,8 @@ GameObject:
   - component: {fileID: 6240433999866577737}
   - component: {fileID: 8393577405747386029}
   - component: {fileID: 216615741346473994}
-  m_Layer: 0
+  - component: {fileID: 4038310010485911933}
+  m_Layer: 7
   m_Name: Ice Falling
   m_TagString: Falling Ice
   m_Icon: {fileID: 0}
@@ -134,3 +135,15 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 707a6dfa8b8872e46b91e2b567c05011, type: 3}
+--- !u!114 &4038310010485911933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884655343268232479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da3ce88f422a4a41871324bab89eeb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

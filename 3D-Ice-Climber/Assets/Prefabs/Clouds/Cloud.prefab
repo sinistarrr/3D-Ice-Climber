@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3201981682176811196}
   - component: {fileID: 2132954576072943566}
   - component: {fileID: 8540580946092135767}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cloud
   m_TagString: Cloud
   m_Icon: {fileID: 0}
@@ -111,7 +111,7 @@ GameObject:
   - component: {fileID: 7784875057337458312}
   - component: {fileID: 8929494670055252700}
   - component: {fileID: 8732124556761965627}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RG_Cloud-02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -217,3 +217,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 706cbb035317cd64c874fcd5e9fdec07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fallingIce: {fileID: 884655343268232479, guid: 15f4de3a35c024a45bb5a41451b973da, type: 3}

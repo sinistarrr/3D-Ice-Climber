@@ -81,7 +81,6 @@ public class PlayerController : MonoBehaviour
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
         }
-        //Debug.Log(collisions);
         if (collisions == 0 || (collisions > 0 && !collidingWithGround))
         {
             isOnGround = false;
@@ -180,7 +179,7 @@ public class PlayerController : MonoBehaviour
                                 cameraMoveDistance = 3;
                             }
                             else if (playerLine == spawnManager.GetMaxRow() + 8){
-                                cameraMoveDistance = 3;
+                                cameraMoveDistance = 2.5f;
                             }
                         }
                     }

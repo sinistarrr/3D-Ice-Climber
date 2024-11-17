@@ -17,7 +17,7 @@ public class SpawnManager : MonoBehaviour
     public GameObject cloudPrefab;
     public List<List<GameObject>> listOfGrounds;
     private Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
-    private Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds;
+    private Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
     private float rowHeight = 3.75f;
     private int maxRowCount = 8;
     private int currentRowCount = 5;
@@ -46,7 +46,6 @@ public class SpawnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(currentRowCount);
     }
 
     private bool SpawnChicken()
@@ -110,7 +109,7 @@ public class SpawnManager : MonoBehaviour
 
         while (true)
         {
-            waitingTime = Random.Range(4, 11);
+            waitingTime = Random.Range(1, 5);
 
             yield return new WaitForSeconds(waitingTime);
 
@@ -122,15 +121,18 @@ public class SpawnManager : MonoBehaviour
 
     }
 
+
     private void BoundsVariablesInit()
     {
-        GameObject unb = Instantiate(unbreakableBlockPrefab), br = Instantiate(breakableBlockPrefab), smbr = Instantiate(smallBreakableBlockPrefab);
+        GameObject unb = Instantiate(unbreakableBlockPrefab), br = Instantiate(breakableBlockPrefab), smbr = Instantiate(smallBreakableBlockPrefab), icef= Instantiate(iceFallingPrefab);
         unbreakableBlockPrefabBounds = unb.GetComponentInChildren<Collider>().bounds.size;
         breakableBlockPrefabBounds = br.GetComponentInChildren<Collider>().bounds.size;
         smallBreakableBlockPrefabBounds = smbr.GetComponentInChildren<Collider>().bounds.size;
+        iceFallingPrefabBounds = icef.GetComponent<Collider>().bounds.size;
         Destroy(unb);
         Destroy(br);
         Destroy(smbr);
+        Destroy(icef);
     }
 
     private void ListOfGroundsInit()
@@ -387,6 +389,9 @@ public class SpawnManager : MonoBehaviour
         currentRowCount++;
     }
 
+    public Vector3 GetIceFallingBounds(){
+        return iceFallingPrefabBounds;
+    }
     public int GetMaxRow()
     {
         return maxRowCount;

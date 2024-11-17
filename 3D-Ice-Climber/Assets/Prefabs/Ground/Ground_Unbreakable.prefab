@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5970561365047291262}
   - component: {fileID: 2600933104063294528}
   - component: {fileID: 6959494776776446028}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Crate_01 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -118,6 +118,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 706cbb035317cd64c874fcd5e9fdec07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fallingIce: {fileID: 884655343268232479, guid: 15f4de3a35c024a45bb5a41451b973da, type: 3}
 --- !u!1 &7631396313484085834
 GameObject:
   m_ObjectHideFlags: 0
@@ -127,7 +128,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3342814389620734269}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ground_Unbreakable
   m_TagString: Ground
   m_Icon: {fileID: 0}
