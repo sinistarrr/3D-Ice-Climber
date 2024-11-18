@@ -12,13 +12,19 @@ public class GroundBehaviour : MonoBehaviour
     private GameObject groundParent;
     private bool isCollidingWithChicken = false;
     private int groundLine;
-    private bool groundHasAnotherGroundBelowIt = false;
+    private float eqSpeed = 10.0f;
+    private float eqIntensity = 0.1f;
+    private bool earthquakeIsActive = false;
+    private Vector3 initialPosition;
+
     // Start is called before the first frame update
     void Start()
     {
         groundParent = transform.root.gameObject;
         // Spawn manager of the ice falling
         StartCoroutine(SpawnFallingIcePeriodically());
+        StartCoroutine(RandomEarthQuake());
+        initialPosition = groundParent.transform.position;
     }
 
     // Update is called once per frame
@@ -26,6 +32,7 @@ public class GroundBehaviour : MonoBehaviour
     {
 
     }
+
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -72,18 +79,52 @@ public class GroundBehaviour : MonoBehaviour
 
         while (true)
         {
-            waitingTime = Random.Range(1.0f, 500.0f);
+            waitingTime = Random.Range(1.0f, 300.0f);
 
             yield return new WaitForSeconds(waitingTime);
 
-            if (!SpawnFallingIce())
-            {
-                break;
-            }
+            SpawnFallingIce();
+
         }
 
     }
-    private bool SpawnFallingIce()
+
+    private IEnumerator RandomEarthQuake()
+    {
+        float waitingTime;
+
+        while (true)
+        {
+            waitingTime = Random.Range(1.0f, 200.0f);
+
+            yield return new WaitForSeconds(waitingTime);
+
+            StartCoroutine(MakeEarthQuake(2));
+            
+
+        }
+
+    }
+
+    private IEnumerator MakeEarthQuake(float time)
+    {
+        float counter = 0;
+        while (counter <= time)
+        {
+            groundParent.transform.position = initialPosition;
+            counter += Time.deltaTime;
+            groundParent.transform.position += eqIntensity * new Vector3(
+                Mathf.PerlinNoise(eqSpeed * Time.time, 1) * ChooseBetweenTwoNumbers(1, -1),
+                Mathf.PerlinNoise(eqSpeed * Time.time, 2) * ChooseBetweenTwoNumbers(1, -1),
+                Mathf.PerlinNoise(eqSpeed * Time.time, 3) * ChooseBetweenTwoNumbers(1, -1));
+            
+            //Wait for a frame so that we don't freeze Unity
+            yield return null;
+        }
+        groundParent.transform.position = initialPosition;
+    }
+
+    private void SpawnFallingIce()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, GetComponentInChildren<Collider>().bounds.size.y * 2);
         if (gameObject.activeSelf && !hitColliders.Any(collider => IsColliderBelow(collider)))
@@ -93,11 +134,6 @@ public class GroundBehaviour : MonoBehaviour
             float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManagerScript.GetIceFallingBounds().y / 2;
             Vector3 spawnPos = new Vector3(groundParent.transform.position.x, yPos, groundParent.transform.position.z);
             Instantiate(fallingIce, spawnPos, fallingIce.transform.rotation);
-            return true;
-        }
-        else
-        {
-            return false;
         }
     }
 
@@ -111,6 +147,15 @@ public class GroundBehaviour : MonoBehaviour
         else
         {
             return false;
+        }
+    }
+
+    private int ChooseBetweenTwoNumbers(int number1, int number2){
+        if(Random.Range(1, 3) == 1){
+            return number1;
+        }
+        else{
+            return number2;
         }
     }
 }
