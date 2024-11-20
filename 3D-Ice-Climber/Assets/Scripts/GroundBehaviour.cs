@@ -14,7 +14,6 @@ public class GroundBehaviour : MonoBehaviour
     private int groundLine;
     private float eqSpeed = 10.0f;
     private float eqIntensity = 0.1f;
-    private bool earthquakeIsActive = false;
     private Vector3 initialPosition;
 
     // Start is called before the first frame update

@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
-    public float speed = 5.5f;
+    private float speed = 5.5f;
     public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
     private float xBound = 16.95f;
@@ -25,8 +26,9 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching = false;
     public bool isFiring = false;
     private bool gameOver = false;
+    private bool playerIsDead = false;
     private bool jumpCooldownElapsed = false;
-    public bool collidingWithGround = false;
+    private bool collidingWithGround = false;
     private int collisions = 0;
     private int playerLine = 0;
     private float cameraMoveDistance = 0;
@@ -37,6 +39,7 @@ public class PlayerController : MonoBehaviour
     private bool cloudLevelStateActivated = false;
     private bool isOnCloud = false;
     private bool playerReachedFourthStage = false;
+    private int playerHP = 3;
 
     // Start is called before the first frame update
     void Start()
@@ -55,7 +58,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!gameOver)
+        if (!playerIsDead)
         {
             // At each frame we check if the player is jumping, the user jump input, all depending whether 
             // the player is on the ground or not
@@ -72,6 +75,61 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        ManageJumping();
+        CheckIfPlayerIsOnTheGround();
+        AddHorizontalMovementIfPlayerIsOnCloud();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        IncrementCollisionCounter();
+
+        if (!playerIsDead)
+        {
+            ManageGroundCollisionsWithPlayer(collision);
+            ManageChickenCollisionWithPlayer(collision);
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
+        DecreaseCollisionCounter();
+        if (parentOfGameObjectCollidedWith.CompareTag("Cloud"))
+        {
+            isOnCloud = false;
+        }
+    }
+
+    private void ManageGroundCollisionsWithPlayer(Collision collision)
+    {
+        // Never returns null because of "root"
+        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
+
+        if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small")
+                || parentOfGameObjectCollidedWith.CompareTag("Ground") || parentOfGameObjectCollidedWith.CompareTag("Cloud"))
+        {
+
+            if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))
+            {
+                ManageBlockDestructionByPlayer(parentOfGameObjectCollidedWith, collision);
+            }
+            ManageGameBehaviourWhenPlayerOnTheGround(parentOfGameObjectCollidedWith, collision);
+        }
+    }
+
+    private void IncrementCollisionCounter()
+    {
+        collisions++;
+    }
+
+    private void DecreaseCollisionCounter()
+    {
+        collisions--;
+    }
+
+    private void ManageJumping()
+    {
         // if jumping is detected and player is on the ground, the player goes up on the Y-Axis with a force
         if (isJumping && isOnGround)
         {
@@ -81,6 +139,9 @@ public class PlayerController : MonoBehaviour
             // we slow down the player by 50% when jumping
             horizontalInput /= 2;
         }
+    }
+    private void CheckIfPlayerIsOnTheGround()
+    {
         if (collisions == 0 || (collisions > 0 && !collidingWithGround))
         {
             isOnGround = false;
@@ -89,138 +150,175 @@ public class PlayerController : MonoBehaviour
         {
             isOnGround = true;
         }
-        AddHorizontalMovementIfPlayerIsOnCloud();
+    }
+    private void ManageBlockDestructionByPlayer(GameObject parentOfBlockGameObject, Collision collision)
+    {
+        // Destruction of Block
+        if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfBlockGameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
+        {
+            parentOfBlockGameObject.SetActive(false);
+            playerAnim.enabled = false;
+            DecreaseCollisionCounter();
+            if (parentOfBlockGameObject.CompareTag("Ground Breakable"))
+            {
+                GroundBehaviour brkGroundScript = parentOfBlockGameObject.GetComponentInChildren<GroundBehaviour>();
+                if (brkGroundScript.IsCollidingWithChicken())
+                {
+                    brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
+                    brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
+                    brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
+                }
+            }
+        }
+    }
+    private void ManageGameBehaviourWhenPlayerOnTheGround(GameObject parentOfBlockGameObject, Collision collision)
+    {
+        if (collision.contacts[0].point.y > parentOfBlockGameObject.transform.position.y)
+        {
+            collidingWithGround = true;
+            Debug.Log("Line of the block is : " + parentOfBlockGameObject.GetComponentInChildren<GroundBehaviour>().GetLine());
+            CheckIfPlayerIsOnCloud(parentOfBlockGameObject);
+            ManagePlayerAnimationAfterHasHitBlock();
+            int groundLine = parentOfBlockGameObject.GetComponentInChildren<GroundBehaviour>().GetLine();
+            UpdateGameWhenPlayerOnANewLine(groundLine);
+        }
+        else
+        {
+            collidingWithGround = false;
+        }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void UpdateGameWhenPlayerOnANewLine(int groundLine)
     {
-        // Never returns null because of "root"
-        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
-        collisions++;
+        if (groundLine > playerLine)
+        {
+            playerLine = groundLine;
+            if (!cloudLevelStateActivated)
+            {
+                if (playerLine > spawnManager.GetMaxRow() - 3)
+                {
+                    cloudLevelStateActivated = true;
+                    spawnManager.SpawnCloudLevelFirstStage();
+                    spawnManager.SpawnMountainBorders();
+                    cameraMoveDistance = 1;
+                }
+                else if (playerLine > spawnManager.GetCurrentMiddleRow())
+                {
+                    spawnManager.AddRow();
+                    cameraMoveDistance = 1;
+                }
+            }
+            else
+            {
+                if (playerLine == spawnManager.GetMaxRow() - 1)
+                {
+                    spawnManager.SpawnCloudLevelSecondStage();
+                    cameraMoveDistance = 1;
+                }
+                else if (playerLine == spawnManager.GetMaxRow() + 1)
+                {
+                    spawnManager.SpawnCloudLevelThirdStage();
+                    cameraMoveDistance = 3;
+                }
+                else if (!playerReachedFourthStage && (playerLine == (spawnManager.GetMaxRow() + 6) || playerLine == (spawnManager.GetMaxRow() + 5)))
+                {
+                    spawnManager.SpawnCloudLevelFourthStage();
+                    playerReachedFourthStage = true;
+                    cameraMoveDistance = 3;
+                }
+                else if (playerLine == spawnManager.GetMaxRow() + 8)
+                {
+                    cameraMoveDistance = 2.5f;
+                }
+                else if (playerLine == spawnManager.GetMaxRow() + 13)
+                {
+                    cameraMoveDistance = 3.0f;
+                    spawnManager.SpawnStar();
+                    SetJumpForce(22.0f);
+                }
+            }
+        }
+    }
+    private void CheckIfPlayerIsOnCloud(GameObject parentOfBlockGameObject)
+    {
+        if (parentOfBlockGameObject.CompareTag("Cloud"))
+        {
+            isOnCloud = true;
+            savedCloud = parentOfBlockGameObject;
+        }
+    }
+    private void ManageChickenCollisionWithPlayer(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Chicken"))
+        {
 
+            // If the object we hit is the enemy
+            // Calculate Angle Between the collision point and the player
+            Vector3 dir = collision.contacts[0].point - transform.position;
+            // We then get the opposite (-Vector3) and normalize it
+            dir = -dir.normalized;
+            // And finally we add force in the direction of dir and multiply it by force. 
+            // This will push back the player
+            playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
+            SetPlayerIsDead(true);
+            UpdateIfGameIsOver();
+            DecreasePlayerHP();
+            ManageRespawningOfPlayer();
+
+            if (!playerAnim.isActiveAndEnabled)
+            {
+                playerAnim.enabled = true;
+            }
+            ManageDeathAnimation();
+
+        }
+    }
+
+    private void ManageRespawningOfPlayer()
+    {
         if (!gameOver)
         {
-            if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small")
-                || parentOfGameObjectCollidedWith.CompareTag("Ground") || parentOfGameObjectCollidedWith.CompareTag("Cloud"))
-            {
-
-                if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable") || parentOfGameObjectCollidedWith.CompareTag("Ground Breakable Small"))
-                {
-                    // Destruction of Block
-                    if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfGameObjectCollidedWith.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
-                    {
-                        parentOfGameObjectCollidedWith.SetActive(false);
-                        playerAnim.enabled = false;
-                        collisions--;
-                        Debug.Log("Line of the block is : " + parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine());
-                        if (parentOfGameObjectCollidedWith.CompareTag("Ground Breakable"))
-                        {
-                            GroundBehaviour brkGroundScript = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>();
-                            if (brkGroundScript.IsCollidingWithChicken())
-                            {
-                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().CollisionUpdateOnDestroyedGround();
-                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().SetDeathActivation(true);
-                                brkGroundScript.GetLastChickenCollidedWith().GetComponent<ChickenBehaviour>().MakeChickenFall();
-                            }
-                        }
-                    }
-                }
-                if (collision.contacts[0].point.y > parentOfGameObjectCollidedWith.transform.position.y)
-                {
-                    collidingWithGround = true;
-                    if (parentOfGameObjectCollidedWith.CompareTag("Cloud"))
-                    {
-                        isOnCloud = true;
-                        savedCloud = parentOfGameObjectCollidedWith;
-                    }
-                    if (!jumpCooldownElapsed)
-                    {
-                        jumpCooldownElapsed = true;
-                        playerAnim.enabled = true;
-                        playerAnim.Rebind();
-                        playerAnim.Update(0f);
-                        isMovingHorizontally = false;
-                        ManageHorizontalAnimation();
-                    }
-                    int groundLine = parentOfGameObjectCollidedWith.GetComponentInChildren<GroundBehaviour>().GetLine();
-                    if (groundLine > playerLine)
-                    {
-                        playerLine = groundLine;
-                        if (!cloudLevelStateActivated)
-                        {
-                            if (playerLine > spawnManager.GetMaxRow() - 3)
-                            {
-                                cloudLevelStateActivated = true;
-                                spawnManager.SpawnCloudLevelFirstStage();
-                                spawnManager.SpawnMountainBorders();
-                                cameraMoveDistance = 1;
-                            }
-                            else if (playerLine > spawnManager.GetCurrentMiddleRow())
-                            {
-                                spawnManager.AddRow();
-                                cameraMoveDistance = 1;
-                            }
-                        }
-                        else
-                        {
-                            if (playerLine == spawnManager.GetMaxRow() - 1)
-                            {
-                                spawnManager.SpawnCloudLevelSecondStage();
-                                cameraMoveDistance = 1;
-                            }
-                            else if (playerLine == spawnManager.GetMaxRow() + 1)
-                            {
-                                spawnManager.SpawnCloudLevelThirdStage();
-                                cameraMoveDistance = 3;
-                            }
-                            else if (!playerReachedFourthStage && (playerLine == (spawnManager.GetMaxRow() + 6) || playerLine == (spawnManager.GetMaxRow() + 5))){
-                                spawnManager.SpawnCloudLevelFourthStage();
-                                playerReachedFourthStage = true;
-                                cameraMoveDistance = 3;
-                            }
-                            else if (playerLine == spawnManager.GetMaxRow() + 8){
-                                cameraMoveDistance = 2.5f;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    collidingWithGround = false;
-                }
-            }
-            if (collision.gameObject.CompareTag("Chicken"))
-            {
-
-                // If the object we hit is the enemy
-                // Calculate Angle Between the collision point and the player
-                Vector3 dir = collision.contacts[0].point - transform.position;
-                // We then get the opposite (-Vector3) and normalize it
-                dir = -dir.normalized;
-                // And finally we add force in the direction of dir and multiply it by force. 
-                // This will push back the player
-                playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
-                gameOver = true;
-                if (!playerAnim.isActiveAndEnabled)
-                {
-                    playerAnim.enabled = true;
-                }
-                ManageDeathAnimation();
-
-            }
+            StartCoroutine(RespawnPlayer());
         }
     }
 
-    private void OnCollisionExit(Collision collision)
+    private IEnumerator RespawnPlayer()
     {
-        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
-        collisions--;
-        if (parentOfGameObjectCollidedWith.CompareTag("Cloud"))
-        {
-            isOnCloud = false;
-        }
+        yield return new WaitForSeconds(3.0f);
+        RespawnPlayerOnLine(playerLine);
+
     }
 
+    private void RespawnPlayerOnLine(int line){
+        // For each block on the line, do the following :
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, GetComponentInChildren<Collider>().bounds.size.y * 2);
+        // If the block is free to spawn a player on, we spawn it.
+        if (gameObject.activeSelf && !hitColliders.Any(collider => IsColliderOnTopOrNear(collider)))
+        {
+
+            // SpawnManager spawnManagerScript = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
+            // float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManagerScript.GetIceFallingBounds().y / 2;
+            // Vector3 spawnPos = new Vector3(groundParent.transform.position.x, yPos, groundParent.transform.position.z);
+            // Instantiate(fallingIce, spawnPos, fallingIce.transform.rotation);
+            // TODO
+            // transform.position = block.transform.position + blockbound thing etc
+        }
+    }
+    private void DecreasePlayerHP()
+    {
+        playerHP--;
+    }
+    private void UpdateIfGameIsOver()
+    {
+        if (playerHP <= 0)
+        {
+            gameOver = true;
+        }
+    }
+    private void SetPlayerIsDead(bool value)
+    {
+        playerIsDead = value;
+    }
     // Player jumping state control
     private void PlayerCheckJumpingState()
     {
@@ -407,12 +505,29 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    private void ManagePlayerAnimationAfterHasHitBlock()
+    {
+        if (!jumpCooldownElapsed)
+        {
+            jumpCooldownElapsed = true;
+            playerAnim.enabled = true;
+            playerAnim.Rebind();
+            playerAnim.Update(0f);
+            isMovingHorizontally = false;
+            ManageHorizontalAnimation();
+        }
+    }
     private void AddHorizontalMovementIfPlayerIsOnCloud()
     {
         if (isOnCloud)
         {
             MovePlayerAlongSideCloud(savedCloud);
         }
+    }
+
+    private void SetJumpForce(float newForce)
+    {
+        jumpForce = newForce;
     }
 
 }

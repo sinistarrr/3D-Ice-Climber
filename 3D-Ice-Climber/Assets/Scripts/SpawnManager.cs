@@ -12,9 +12,10 @@ public class SpawnManager : MonoBehaviour
     public GameObject breakableBlockPrefab;
     public GameObject smallBreakableBlockPrefab;
     public GameObject chickenPrefab;
-    public GameObject birdPrefab;
+    public GameObject starPrefab;
     public GameObject iceFallingPrefab;
     public GameObject cloudPrefab;
+    public GameObject powerupPrefab;
     public List<List<GameObject>> listOfGrounds;
     private Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
     private Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
@@ -341,16 +342,29 @@ public class SpawnManager : MonoBehaviour
 
     private void InstantiatePlatform(Tuple<float, HashSet<int>> platform)
     {
+        bool hasPowerUp = Random.value < 0.5f;
+        int blockToSpawnPowerUpOn = -1;
+        int currentBlockNumber = 0;
+        if(hasPowerUp && platform.Item2.Count() > 0){
+            blockToSpawnPowerUpOn = Random.Range(0, platform.Item2.Count());
+        }
         for (int j = 0; j < (blockCount / 2); j++)
         {
-
             if (platform.Item2.Contains(j))
             {
+                // Powerup spawning
+                if(hasPowerUp && (currentBlockNumber == blockToSpawnPowerUpOn)){
+                    Vector3 powerupSpawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1 + unbreakableBlockPrefabBounds.y * 1.5f, originBlockPosition.z);
+                    Instantiate(powerupPrefab, powerupSpawnPos, powerupPrefab.transform.rotation);
+                }
+                // Platform block spawning
                 Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1, originBlockPosition.z);
                 GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
                 unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(currentRowCount);
+                currentBlockNumber++;
             }
         }
+
         IncrementCurrentRowCount();
     }
 
@@ -359,6 +373,11 @@ public class SpawnManager : MonoBehaviour
         GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
         cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
         IncrementCurrentRowCount();
+    }
+
+    public void SpawnStar(){
+        Vector3 spawnPos = new Vector3(starPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight - 7.25f, starPrefab.transform.position.z - 1.5f);
+        Instantiate(starPrefab, spawnPos, starPrefab.transform.rotation);
     }
     public void AddRow()
     {

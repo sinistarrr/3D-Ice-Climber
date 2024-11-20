@@ -1107,7 +1107,7 @@ GameObject:
   - component: {fileID: 653108937532790300}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1194,10 +1194,8 @@ MonoBehaviour:
   verticalInput: 0
   jumpInput: 0
   fireInput: 0
-  speed: 5.5
   jumpForce: 13
   isFiring: 0
-  collidingWithGround: 0
 --- !u!54 &8670815659683765363
 Rigidbody:
   m_ObjectHideFlags: 0

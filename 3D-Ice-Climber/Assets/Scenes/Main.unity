@@ -6710,7 +6710,7 @@ Transform:
   m_GameObject: {fileID: 1242356853}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 22.25, z: 0}
+  m_LocalPosition: {x: 0, y: 44.15, z: 0}
   m_LocalScale: {x: 5, y: 1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11939,9 +11939,10 @@ MonoBehaviour:
   breakableBlockPrefab: {fileID: 4430426752671580011, guid: 71440e1b94e86bc4e88f3c63ef2c2984, type: 3}
   smallBreakableBlockPrefab: {fileID: 3783087294466245475, guid: 7f7a60aff43c8e84288f4e6924fa262f, type: 3}
   chickenPrefab: {fileID: 1935375252813755643, guid: 69839947f24d3c648a1c8dcb47d684d1, type: 3}
-  birdPrefab: {fileID: 921067947296030110, guid: 791a2c2dbdbb87b4289df5260b96cdee, type: 3}
+  starPrefab: {fileID: 540094495336357011, guid: 3ce7141b7e1481841bc7a66efb2516cd, type: 3}
   iceFallingPrefab: {fileID: 884655343268232479, guid: 15f4de3a35c024a45bb5a41451b973da, type: 3}
   cloudPrefab: {fileID: 1858685228182508717, guid: 1c8fd0935057287478e8efb8f9437603, type: 3}
+  powerupPrefab: {fileID: 6651102834334447914, guid: 5ff2c149000d8dc499bea984fb570f05, type: 3}
 --- !u!4 &2127442681 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2531364503514436994, guid: 63e49baefc7726d48b25c12a022e3193, type: 3}
