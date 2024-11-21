@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor.Search;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -17,8 +18,9 @@ public class SpawnManager : MonoBehaviour
     public GameObject cloudPrefab;
     public GameObject powerupPrefab;
     public List<List<GameObject>> listOfGrounds;
-    private Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
-    private Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
+    public List<Tuple<float, HashSet<int>>> cloudLevelPlatforms;
+    public Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
+    public Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
     private float rowHeight = 3.75f;
     private int maxRowCount = 8;
     private int currentRowCount = 5;
@@ -38,6 +40,7 @@ public class SpawnManager : MonoBehaviour
         breakableBlocksPrefabs = new List<GameObject> { breakableBlockPrefab, smallBreakableBlockPrefab };
         breakableBlocksPrefabsBounds = new List<Vector3> { breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds };
         ListOfGroundsInit();
+        CloudLevelPlatformsInit();
         // Creation of the blocks in the game
 
         // Spawn manager of the chickens
@@ -125,7 +128,7 @@ public class SpawnManager : MonoBehaviour
 
     private void BoundsVariablesInit()
     {
-        GameObject unb = Instantiate(unbreakableBlockPrefab), br = Instantiate(breakableBlockPrefab), smbr = Instantiate(smallBreakableBlockPrefab), icef= Instantiate(iceFallingPrefab);
+        GameObject unb = Instantiate(unbreakableBlockPrefab), br = Instantiate(breakableBlockPrefab), smbr = Instantiate(smallBreakableBlockPrefab), icef = Instantiate(iceFallingPrefab);
         unbreakableBlockPrefabBounds = unb.GetComponentInChildren<Collider>().bounds.size;
         breakableBlockPrefabBounds = br.GetComponentInChildren<Collider>().bounds.size;
         smallBreakableBlockPrefabBounds = smbr.GetComponentInChildren<Collider>().bounds.size;
@@ -134,6 +137,27 @@ public class SpawnManager : MonoBehaviour
         Destroy(br);
         Destroy(smbr);
         Destroy(icef);
+    }
+
+    private void CloudLevelPlatformsInit()
+    {
+        // List of our different platforms that contain the HashSet of the block positions
+        cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
+            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.0f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 1.25f, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 4.25f, new HashSet<int> { 6, 7, 8, 9, 10, 11, 12 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 5.5f, new HashSet<int> { 22, 23, 24 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 12.25f, new HashSet<int> { 9, 10, 11 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 14.0f, new HashSet<int> { 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 11) * rowHeight - 16.5f, new HashSet<int> { 13, 14, 15 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+        };
     }
 
     private void ListOfGroundsInit()
@@ -252,117 +276,48 @@ public class SpawnManager : MonoBehaviour
         }
 
     }
-    public void SpawnCloudLevelFirstStage()
-    {
-        HashSet<int> firstLineHoles = new HashSet<int>() { 8, 9, 16, 17, 24, 25 };
 
-        for (int j = 0; j < (blockCount / 2); j++)
-        {
-            if (!firstLineHoles.Contains(j))
-            {
-                Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + currentRowCount * rowHeight, originBlockPosition.z);
-                GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-                unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(currentRowCount);
-            }
+    public void SpawnCloudLevel()
+    {
+        for(int i = 0; i < cloudLevelPlatforms.Count(); i++){
+            InstantiatePlatform(i, cloudLevelPlatforms[i]);
         }
-        IncrementCurrentRowCount();
-
-    }
-    public void SpawnCloudLevelSecondStage()
-    {
-        HashSet<int> secondLineHoles = new HashSet<int>() { 0, 1, 2, 3, 4, 5, 6, 11, 12, 13, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33 };
-
-        for (int j = 0; j < (blockCount / 2); j++)
-        {
-
-            if (!secondLineHoles.Contains(j))
-            {
-                Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + currentRowCount * rowHeight - rowHeight / 3f, originBlockPosition.z);
-                GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-                unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(currentRowCount);
-            }
-        }
-        IncrementCurrentRowCount();
     }
 
-    public void SpawnCloudLevelThirdStage()
-    {
-        // List of our different platforms, they are tuple that contain Height float value of the platform and the HashSet of the block positions of the platform
-        List<Tuple<float, HashSet<int>>> platforms = new List<Tuple<float, HashSet<int>>>();
-
-        // Initialization of said platforms, numbers correspond to blocks position
-        HashSet<int> firstLineBlocks = new HashSet<int>() { 19, 20, 21, 22 };
-        HashSet<int> secondLineBlocks = new HashSet<int>() { 6, 7, 8, 9, 10, 11, 12 };
-        HashSet<int> thirdLineBlocks = new HashSet<int>() { 22, 23, 24 };
-        HashSet<int> fourthLineBlocks = new HashSet<int>() { 13, 14, 15, 16, 17, 18 };
-
-        // We add the platforms to the list of platforms
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 1) * rowHeight - 1.25f, firstLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 2) * rowHeight - 4.25f, secondLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 3) * rowHeight - 5.5f, thirdLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 4) * rowHeight - 8.75f, fourthLineBlocks));
-
-        // We start by creating the cloud
-        Vector3 spawnPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight - 1.0f, cloudPrefab.transform.position.z - 0.5f);
-        SpawnCloudAtCoordinates(spawnPos, currentRowCount);
-
-        // We create the platforms
-        platforms.ForEach(platform => InstantiatePlatform(platform));
-
-    }
-
-    public void SpawnCloudLevelFourthStage()
-    {
-        // List of our different platforms, they are tuple that contain Height float value of the platform and the HashSet of the block positions of the platform
-        List<Tuple<float, HashSet<int>>> platforms = new List<Tuple<float, HashSet<int>>>();
-
-        // Initialization of said platforms, numbers correspond to blocks position
-        HashSet<int> firstLineBlocks = new HashSet<int>() { 17, 18, 19, 20 };
-        HashSet<int> secondLineBlocks = new HashSet<int>() { 9, 10, 11 };
-        HashSet<int> thirdLineBlocks = new HashSet<int>() { 20, 21, 22 };
-        HashSet<int> fourthLineBlocks = new HashSet<int>() { 13, 14, 15 };
-        HashSet<int> fifthLineBlocks = new HashSet<int>() { 15, 16, 17, 18 };
-        HashSet<int> peakLineBlocks = new HashSet<int>() {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25};
-
-        // We add the platforms to the list of platforms
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 1) * rowHeight - 9.25f, firstLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 2) * rowHeight - 12.25f, secondLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 3) * rowHeight - 14.0f, thirdLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 4) * rowHeight - 16.5f, fourthLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 5) * rowHeight - 17.25f, fifthLineBlocks));
-        platforms.Add(new Tuple<float, HashSet<int>>((currentRowCount + 6) * rowHeight - 18f, peakLineBlocks));
-
-        // We start by creating the cloud
-        Vector3 spawnPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight - 8.5f, cloudPrefab.transform.position.z - 0.5f);
-        SpawnCloudAtCoordinates(spawnPos, currentRowCount);
-
-        // We create the platforms
-        platforms.ForEach(platform => InstantiatePlatform(platform));
-    }
-
-    private void InstantiatePlatform(Tuple<float, HashSet<int>> platform)
+    private void InstantiatePlatform(int index, Tuple<float, HashSet<int>> platform)
     {
         bool hasPowerUp = Random.value < 0.5f;
         int blockToSpawnPowerUpOn = -1;
         int currentBlockNumber = 0;
-        if(hasPowerUp && platform.Item2.Count() > 0){
-            blockToSpawnPowerUpOn = Random.Range(0, platform.Item2.Count());
-        }
-        for (int j = 0; j < (blockCount / 2); j++)
+
+        if (platform.Item2.Count() > 0)
         {
-            if (platform.Item2.Contains(j))
+            if (hasPowerUp)
             {
-                // Powerup spawning
-                if(hasPowerUp && (currentBlockNumber == blockToSpawnPowerUpOn)){
-                    Vector3 powerupSpawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1 + unbreakableBlockPrefabBounds.y * 1.5f, originBlockPosition.z);
-                    Instantiate(powerupPrefab, powerupSpawnPos, powerupPrefab.transform.rotation);
-                }
-                // Platform block spawning
-                Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1, originBlockPosition.z);
-                GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
-                unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(currentRowCount);
-                currentBlockNumber++;
+                blockToSpawnPowerUpOn = Random.Range(0, platform.Item2.Count());
             }
+            for (int j = 0; j < (blockCount / 2); j++)
+            {
+                if (platform.Item2.Contains(j))
+                {
+                    // Powerup spawning
+                    if (hasPowerUp && (currentBlockNumber == blockToSpawnPowerUpOn))
+                    {
+                        Vector3 powerupSpawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1 + unbreakableBlockPrefabBounds.y * 1.5f, originBlockPosition.z);
+                        Instantiate(powerupPrefab, powerupSpawnPos, powerupPrefab.transform.rotation);
+                    }
+                    // Platform block spawning
+                    Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1, originBlockPosition.z);
+                    GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
+                    unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount + index);
+                    currentBlockNumber++;
+                }
+            }
+        }
+        else
+        {
+            Vector3 cloudPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + platform.Item1, cloudPrefab.transform.position.z - 0.5f);
+            SpawnCloudAtCoordinates(cloudPos, maxRowCount + index);
         }
 
         IncrementCurrentRowCount();
@@ -372,11 +327,11 @@ public class SpawnManager : MonoBehaviour
     {
         GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
         cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
-        IncrementCurrentRowCount();
     }
 
-    public void SpawnStar(){
-        Vector3 spawnPos = new Vector3(starPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight - 7.25f, starPrefab.transform.position.z - 1.5f);
+    public void SpawnStar()
+    {
+        Vector3 spawnPos = new Vector3(starPrefab.transform.position.x, originBlockPosition.y + (maxRowCount + 14) * rowHeight - 7.25f, starPrefab.transform.position.z - 1.5f);
         Instantiate(starPrefab, spawnPos, starPrefab.transform.rotation);
     }
     public void AddRow()
@@ -408,11 +363,29 @@ public class SpawnManager : MonoBehaviour
         currentRowCount++;
     }
 
-    public Vector3 GetIceFallingBounds(){
+    public Vector3 GetIceFallingBounds()
+    {
         return iceFallingPrefabBounds;
     }
     public int GetMaxRow()
     {
         return maxRowCount;
+    }
+
+    public int GetBlockCount()
+    {
+        return blockCount;
+    }
+    public List<List<GameObject>> GetListOfGrounds()
+    {
+        return listOfGrounds;
+    }
+    public List<GameObject> GetListOfGroundsLine(int line)
+    {
+        return listOfGrounds[line];
+    }
+    public GameObject GetBlock(int line, int blockNumber)
+    {
+        return listOfGrounds[line][blockNumber];
     }
 }

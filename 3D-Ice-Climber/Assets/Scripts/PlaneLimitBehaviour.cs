@@ -18,6 +18,11 @@ public class PlaneLimitBehaviour : MonoBehaviour
     }
 
     private void OnTriggerEnter(Collider other){
-        Destroy(other.gameObject);
+        if(other.gameObject.CompareTag("Player")){
+            other.gameObject.GetComponent<PlayerController>().ManagePlayerDeath(true);
+        }
+        else if(!other.transform.root.gameObject.CompareTag("Player")){
+            Destroy(other.gameObject);
+        }
     }
 }

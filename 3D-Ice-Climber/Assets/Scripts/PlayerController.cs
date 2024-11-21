@@ -1,14 +1,14 @@
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     public float horizontalInput, verticalInput, jumpInput, fireInput;
-    private float speed = 5.5f;
+    private float speed = 6.0f;
     public float jumpForce = 14.0f;
     private float enemyPushForce = 20.0f;
     private float xBound = 16.95f;
@@ -40,6 +40,7 @@ public class PlayerController : MonoBehaviour
     private bool isOnCloud = false;
     private bool playerReachedFourthStage = false;
     private int playerHP = 3;
+    private static System.Random rng = new System.Random();
 
     // Start is called before the first frame update
     void Start()
@@ -198,7 +199,8 @@ public class PlayerController : MonoBehaviour
                 if (playerLine > spawnManager.GetMaxRow() - 3)
                 {
                     cloudLevelStateActivated = true;
-                    spawnManager.SpawnCloudLevelFirstStage();
+                    // spawnManager.SpawnCloudLevelFirstStage();
+                    spawnManager.SpawnCloudLevel();
                     spawnManager.SpawnMountainBorders();
                     cameraMoveDistance = 1;
                 }
@@ -212,17 +214,14 @@ public class PlayerController : MonoBehaviour
             {
                 if (playerLine == spawnManager.GetMaxRow() - 1)
                 {
-                    spawnManager.SpawnCloudLevelSecondStage();
                     cameraMoveDistance = 1;
                 }
                 else if (playerLine == spawnManager.GetMaxRow() + 1)
                 {
-                    spawnManager.SpawnCloudLevelThirdStage();
                     cameraMoveDistance = 3;
                 }
                 else if (!playerReachedFourthStage && (playerLine == (spawnManager.GetMaxRow() + 6) || playerLine == (spawnManager.GetMaxRow() + 5)))
                 {
-                    spawnManager.SpawnCloudLevelFourthStage();
                     playerReachedFourthStage = true;
                     cameraMoveDistance = 3;
                 }
@@ -260,50 +259,134 @@ public class PlayerController : MonoBehaviour
             // And finally we add force in the direction of dir and multiply it by force. 
             // This will push back the player
             playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
-            SetPlayerIsDead(true);
-            UpdateIfGameIsOver();
-            DecreasePlayerHP();
-            ManageRespawningOfPlayer();
-
-            if (!playerAnim.isActiveAndEnabled)
-            {
-                playerAnim.enabled = true;
-            }
-            ManageDeathAnimation();
+            ManagePlayerDeath(false);
 
         }
     }
+    public void ManagePlayerDeath(bool diedFalling)
+    {
+        SetPlayerIsDead(true);
+        UpdateIfGameIsOver();
+        DecreasePlayerHP();
+        ManageRespawningOfPlayer(diedFalling);
 
-    private void ManageRespawningOfPlayer()
+        if (!playerAnim.isActiveAndEnabled)
+        {
+            playerAnim.enabled = true;
+        }
+        ManageDeathAnimation();
+        if(diedFalling){
+            StartCoroutine(FreezePlayerOnFall());
+        }
+    }
+    private IEnumerator FreezePlayerOnFall(){
+        yield return new WaitForSeconds(0.2f);
+        playerRb.constraints = RigidbodyConstraints.FreezeAll;
+
+    }
+    private void ManageRespawningOfPlayer(bool diedFalling)
     {
         if (!gameOver)
         {
-            StartCoroutine(RespawnPlayer());
+            StartCoroutine(RespawnPlayer(diedFalling));
         }
     }
 
-    private IEnumerator RespawnPlayer()
+    private IEnumerator RespawnPlayer(bool diedFalling)
     {
         yield return new WaitForSeconds(3.0f);
         RespawnPlayerOnLine(playerLine);
+        SetPlayerIsDead(false);
+        ResetPlayerAnimation();
+        if(diedFalling){
+            playerRb.constraints = RigidbodyConstraints.None;
+            playerRb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
+        }
 
     }
 
-    private void RespawnPlayerOnLine(int line){
-        // For each block on the line, do the following :
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, GetComponentInChildren<Collider>().bounds.size.y * 2);
-        // If the block is free to spawn a player on, we spawn it.
-        if (gameObject.activeSelf && !hitColliders.Any(collider => IsColliderOnTopOrNear(collider)))
+    private void RespawnPlayerOnLine(int line)
+    {
+        // If Player in Cloud Level
+        if (line > spawnManager.GetMaxRow() - 1)
+        {
+            Vector3 ogBlockPos = spawnManager.originBlockPosition;
+            Vector3 unbrBlockPrefabBounds = spawnManager.unbreakableBlockPrefabBounds;
+            Tuple<float, HashSet<int>> platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow()];
+            List<int> cloudLevelGround;
+            float height;
+
+            // If platform is a cloud, we get the one below.
+            if (platform.Item2.Count() == 0)
+            {
+                platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow() - 1];
+            }
+            cloudLevelGround = platform.Item2.ToList();
+            height = platform.Item1;
+
+            cloudLevelGround.OrderBy(_ => rng.Next());
+            int blockNbToSpawnPlayerOn = cloudLevelGround.Find(block => IsPositionAvailable(new Vector3(ogBlockPos.x + block * unbrBlockPrefabBounds.x, ogBlockPos.y + height, ogBlockPos.z)));
+            RespawnPlayerOnCloudLevelBlock(platform, unbrBlockPrefabBounds, ogBlockPos, blockNbToSpawnPlayerOn);
+        }
+        else
         {
 
-            // SpawnManager spawnManagerScript = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
-            // float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManagerScript.GetIceFallingBounds().y / 2;
-            // Vector3 spawnPos = new Vector3(groundParent.transform.position.x, yPos, groundParent.transform.position.z);
-            // Instantiate(fallingIce, spawnPos, fallingIce.transform.rotation);
-            // TODO
-            // transform.position = block.transform.position + blockbound thing etc
+            // Get a list from script spawnManager that corresponds to specific line that player is on
+            // GetRange makes us get only the half of it from 0 to half of max number of blocks on a block line.
+            // OrderBy shuffles the result randomly and stores it in a list with ToList()
+            // the time complexity of the sort operation stays the typical for QuickSort O(N*logN) average / O(N2) worst case.
+            List<Tuple<int, GameObject>> ground = new List<Tuple<int, GameObject>>();
+            List<GameObject> spawnManagerGround = spawnManager.GetListOfGroundsLine(line).GetRange(0, spawnManager.GetBlockCount() / 2 - 1);
+            for (int i = 0; i < spawnManagerGround.Count(); i++)
+            {
+                ground.Add(new Tuple<int, GameObject>(i, spawnManagerGround[i]));
+            }
+            ground = ground.OrderBy(_ => rng.Next()).ToList();
+            int blockNbToSpawnPlayerOn = ground.Find(block => IsBlockAvailable(block.Item2)).Item1;
+            RespawnPlayerOnBlock(line, blockNbToSpawnPlayerOn);
         }
+
     }
+
+    private void RespawnPlayerOnBlock(int line, int blockNb)
+    {
+        GameObject blockParent = spawnManager.GetBlock(line, blockNb).transform.root.gameObject;
+        float yPos = blockParent.transform.position.y + blockParent.GetComponentInChildren<Collider>().bounds.size.y / 2;
+
+        transform.position = new Vector3(blockParent.transform.position.x, yPos, transform.position.z);
+    }
+    private void RespawnPlayerOnCloudLevelBlock(Tuple<float, HashSet<int>> platform, Vector3 unbrBlockPrefabBounds, Vector3 ogBlockPos, int blockNb)
+    {
+        transform.position = new Vector3(ogBlockPos.x + unbrBlockPrefabBounds.x * blockNb , platform.Item1 + ogBlockPos.y + unbrBlockPrefabBounds.y / 2, transform.position.z);
+    }
+
+    private bool IsBlockAvailable(GameObject block)
+    {
+        return block.activeSelf && IsPositionAvailable(block.transform.position);
+    }
+    private bool IsPositionAvailable(Vector3 blockPosition)
+    {
+        // For each block on the line, do the following :
+        Collider[] hitColliders = Physics.OverlapSphere(blockPosition, spawnManager.unbreakableBlockPrefabBounds.x * 2);
+        // If the block is free to spawn a player on, we spawn it.
+        if (!hitColliders.Any(collider => IsColliderAChickenOrOnTop(blockPosition, collider)))
+        {
+            return true;
+        }
+        return false;
+    }
+    private bool IsColliderAChickenOrOnTop(Vector3 blockPosition, Collider collider)
+    {
+        GameObject colliderParent = collider.transform.root.gameObject;
+        //return colliderParent.CompareTag("Chicken");
+        if (colliderParent.CompareTag("Chicken") || ((colliderParent.transform.position.y - blockPosition.y) >= 0.1f && Mathf.Approximately(colliderParent.transform.position.x, blockPosition.x)))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
     private void DecreasePlayerHP()
     {
         playerHP--;
@@ -510,12 +593,17 @@ public class PlayerController : MonoBehaviour
         if (!jumpCooldownElapsed)
         {
             jumpCooldownElapsed = true;
-            playerAnim.enabled = true;
-            playerAnim.Rebind();
-            playerAnim.Update(0f);
-            isMovingHorizontally = false;
-            ManageHorizontalAnimation();
+            ResetPlayerAnimation();
         }
+    }
+
+    private void ResetPlayerAnimation()
+    {
+        playerAnim.enabled = true;
+        playerAnim.Rebind();
+        playerAnim.Update(0f);
+        isMovingHorizontally = false;
+        ManageHorizontalAnimation();
     }
     private void AddHorizontalMovementIfPlayerIsOnCloud()
     {
