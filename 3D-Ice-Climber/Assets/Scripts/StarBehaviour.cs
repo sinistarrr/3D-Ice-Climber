@@ -7,6 +7,8 @@ public class StarBehaviour : MonoBehaviour
     public float speed = 5.0f;
     private bool isMovingOnTheRight;
     private float xBound = 18.5f;
+    private int pointValue = 5000;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -23,6 +25,19 @@ public class StarBehaviour : MonoBehaviour
     {
         moveStarHorizontally();
         constraintStarPosition();
+    }
+
+    private void OnCollisionEnter(Collision collision){
+        GameObject parentOfGameObjectCollidedWith = collision.transform.root.gameObject;
+        if(parentOfGameObjectCollidedWith.CompareTag("Player")){
+            SpawnManager spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
+            PlayerController player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
+            Destroy(gameObject);
+            spawnManager.UpdateScore(pointValue);
+            spawnManager.ActivateVictoryText();
+            spawnManager.ActivateVictoryState();
+            player.starParticle.Play();
+        }
     }
 
     // provides horizontal movement to the cloud

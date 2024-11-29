@@ -6,6 +6,7 @@ public class ChickenBehaviour : MonoBehaviour
 {
     public float speed = 2.0f;
     public float runningSpeedMultiplier = 2.0f;
+    public ParticleSystem chickenParticle;
     private float xBound = 17.0f;
     private int collisionsWithGround = 0;
     private bool runningAwayMode = false;
@@ -142,6 +143,7 @@ public class ChickenBehaviour : MonoBehaviour
     public void SetDeathActivation(bool state){
         deathIsActivated = state;
         if(deathIsActivated){
+            chickenParticle.Stop();
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             Physics.IgnoreCollision(player.GetComponent<Collider>(), GetComponent<Collider>());
         }

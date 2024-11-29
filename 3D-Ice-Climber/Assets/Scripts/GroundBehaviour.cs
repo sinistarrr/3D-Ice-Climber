@@ -21,7 +21,9 @@ public class GroundBehaviour : MonoBehaviour
     {
         groundParent = transform.root.gameObject;
         // Spawn manager of the ice falling
-        StartCoroutine(SpawnFallingIcePeriodically());
+        if(groundLine != 0){
+            StartCoroutine(SpawnFallingIcePeriodically());
+        }
         if(groundLine % 2 != 0){
             StartCoroutine(RandomEarthQuake());
         }

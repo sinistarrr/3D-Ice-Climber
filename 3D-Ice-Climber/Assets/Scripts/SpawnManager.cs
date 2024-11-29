@@ -2,13 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEditor.Search;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class SpawnManager : MonoBehaviour
 {
+    public GameObject player;
     public GameObject unbreakableBlockPrefab;
     public GameObject breakableBlockPrefab;
     public GameObject smallBreakableBlockPrefab;
@@ -17,10 +21,24 @@ public class SpawnManager : MonoBehaviour
     public GameObject iceFallingPrefab;
     public GameObject cloudPrefab;
     public GameObject powerupPrefab;
+    public GameObject titleScreen;
+    public ParticleSystem cloudParticle;
     public List<List<GameObject>> listOfGrounds;
     public List<Tuple<float, HashSet<int>>> cloudLevelPlatforms;
     public Vector3 originBlockPosition = new Vector3(-16.5f, -2.0f, -0.5f);
     public Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI hpText;
+    public TextMeshProUGUI gameOverText;
+    public TextMeshProUGUI victoryText;
+    public Button restartButton;
+    public Button startButton;
+    private Camera gameCamera;
+    private AudioSource titleAudio;
+    private bool gameIsOver = false;
+    private bool victory = false;
+    private int score;
+    private int playerHP = 3;
     private float rowHeight = 3.75f;
     private int maxRowCount = 8;
     private int currentRowCount = 5;
@@ -30,6 +48,8 @@ public class SpawnManager : MonoBehaviour
     private float xBound = 17.0f;
     private int chickensNumberLimit = 2;
     private float spawnManagerPositionYOffset = 1.75f;
+    private int difficultyLevel = 1;
+
 
     // Start is called before the first frame update
     void Start()
@@ -45,6 +65,10 @@ public class SpawnManager : MonoBehaviour
 
         // Spawn manager of the chickens
         StartCoroutine(SpawnChickenPeriodically());
+        titleAudio = GetComponent<AudioSource>();
+        gameCamera = Camera.main;
+
+
     }
 
     // Update is called once per frame
@@ -52,6 +76,67 @@ public class SpawnManager : MonoBehaviour
     {
     }
 
+    public void UpdateScore(int valueToAdd)
+    {
+        if (!gameIsOver)
+        {
+            score += valueToAdd;
+            scoreText.text = "Score: " + score;
+        }
+    }
+    public void UpdateHP(int valueToAdd)
+    {
+        if (!gameIsOver)
+        {
+            playerHP += valueToAdd;
+            hpText.text = "HP: " + playerHP;
+        }
+    }
+    public void ActivateGameOverText()
+    {
+        gameOverText.gameObject.SetActive(true);
+    }
+    public void ActivateGameOverState()
+    {
+        if (!victory)
+        {
+            gameIsOver = true;
+        }
+    }
+    public void ActivateVictoryText()
+    {
+        victoryText.gameObject.SetActive(true);
+    }
+    public void ActivateVictoryState()
+    {
+        if (!gameIsOver)
+        {
+            victory = true;
+            StartCoroutine(RestartGameAfterFewSeconds(5));
+        }
+
+    }
+    public void ActivateRestartButton()
+    {
+        restartButton.gameObject.SetActive(true);
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    public void StartGame()
+    {
+        score = 0;
+        UpdateScore(0);
+        UpdateHP(0);
+        titleScreen.SetActive(false);
+        scoreText.gameObject.SetActive(true);
+        hpText.gameObject.SetActive(true);
+        Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
+        titleAudio.Stop();
+        gameCamera.GetComponent<AudioSource>().Play();
+    }
     private bool SpawnChicken()
     {
         List<GameObject> gameObjects = GameObject.FindGameObjectsWithTag("Chicken").ToList();
@@ -123,6 +208,11 @@ public class SpawnManager : MonoBehaviour
             }
         }
 
+    }
+    private IEnumerator RestartGameAfterFewSeconds(int seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        RestartGame();
     }
 
 
@@ -279,7 +369,8 @@ public class SpawnManager : MonoBehaviour
 
     public void SpawnCloudLevel()
     {
-        for(int i = 0; i < cloudLevelPlatforms.Count(); i++){
+        for (int i = 0; i < cloudLevelPlatforms.Count(); i++)
+        {
             InstantiatePlatform(i, cloudLevelPlatforms[i]);
         }
     }
@@ -327,11 +418,12 @@ public class SpawnManager : MonoBehaviour
     {
         GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
         cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
+        Instantiate(cloudParticle, new Vector3(transform.position.x, spawnPos.y, spawnPos.z), transform.rotation);
     }
 
     public void SpawnStar()
     {
-        Vector3 spawnPos = new Vector3(starPrefab.transform.position.x, originBlockPosition.y + (maxRowCount + 14) * rowHeight - 7.25f, starPrefab.transform.position.z - 1.5f);
+        Vector3 spawnPos = new Vector3(starPrefab.transform.position.x, originBlockPosition.y + (maxRowCount + 14) * rowHeight - 7.25f, starPrefab.transform.position.z - 0.5f);
         Instantiate(starPrefab, spawnPos, starPrefab.transform.rotation);
     }
     public void AddRow()
@@ -387,5 +479,9 @@ public class SpawnManager : MonoBehaviour
     public GameObject GetBlock(int line, int blockNumber)
     {
         return listOfGrounds[line][blockNumber];
+    }
+    public int GetPlayerHP()
+    {
+        return playerHP;
     }
 }
