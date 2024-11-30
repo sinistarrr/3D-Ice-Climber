@@ -379,7 +379,7 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    private void RespawnPlayerOnLine(int line)
+    public void RespawnPlayerOnLine(int line)
     {
         // If Player in Cloud Level
         if (line > spawnManager.GetMaxRow() - 1)

@@ -24,6 +24,8 @@ public class SpawnManager : MonoBehaviour
     public GameObject powerupPrefab;
     public GameObject titleScreen;
     public GameObject manualScreen;
+    public GameObject titleButtons;
+    public GameObject difficultyButtons;
     public AudioClip menuButtonClickSound;
     public ParticleSystem cloudParticle;
     public List<List<GameObject>> listOfGrounds;
@@ -52,22 +54,19 @@ public class SpawnManager : MonoBehaviour
     private float xBound = 17.0f;
     private int chickensNumberLimit = 2;
     private float spawnManagerPositionYOffset = 1.75f;
-    private int difficultyLevel = 1;
 
 
     // Start is called before the first frame update
     void Start()
     {
         BoundsVariablesInit();
-        // be careful that both lists have same prefab order, its important for later
-        breakableBlocksPrefabs = new List<GameObject> { breakableBlockPrefab, smallBreakableBlockPrefab };
-        breakableBlocksPrefabsBounds = new List<Vector3> { breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds };
+        BreakableBlockVariablesInit();
+        // Creation of the blocks in the game
         ListOfGroundsInit();
         CloudLevelPlatformsInit();
-        // Creation of the blocks in the game
-
         // Spawn manager of the chickens
         StartCoroutine(SpawnChickenPeriodically());
+        
         titleAudio = GetComponent<AudioSource>();
         gameCamera = Camera.main;
 
@@ -137,28 +136,46 @@ public class SpawnManager : MonoBehaviour
         titleAudio.PlayOneShot(menuButtonClickSound);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-    public void StartGame()
+
+    public void ClickOnStartButton(){
+        titleAudio.PlayOneShot(menuButtonClickSound);
+        titleButtons.SetActive(false);
+        difficultyButtons.SetActive(true);
+    }
+    public void StartGame(int difficulty)
     {
+        InitializeInGameStatsInfo(difficulty);
+        InitializeInGameText();
+        Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
+        InitializeStartingSounds();
+        DesactivateMenuEffects();
+
+    }
+    private void InitializeInGameStatsInfo(int difficulty){
         score = 0;
         UpdateScore(0);
-        UpdateHP(0);
+        UpdateHP(3 - difficulty);
         UpdateFloor(0);
+    }
+    private void InitializeInGameText(){
         titleScreen.SetActive(false);
         scoreText.gameObject.SetActive(true);
         hpText.gameObject.SetActive(true);
         floorText.gameObject.SetActive(true);
-        Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
+    }
+    private void InitializeStartingSounds(){
         titleAudio.Stop();
         gameCamera.GetComponent<AudioSource>().PlayOneShot(menuButtonClickSound);
         gameCamera.GetComponent<AudioSource>().Play();
+    }
+    private void DesactivateMenuEffects(){
         PostProcessVolume ppVolume = gameCamera.GetComponent<PostProcessVolume>();
         DepthOfField dofEffect;
         ColorGrading colorGradingEffect;
-        ppVolume.profile.TryGetSettings(out dofEffect); // we get the settings inside bloom variable
-        ppVolume.profile.TryGetSettings(out colorGradingEffect); // we get the settings inside bloom variable
+        ppVolume.profile.TryGetSettings(out dofEffect); // we get the settings inside DepthOfField variable
+        ppVolume.profile.TryGetSettings(out colorGradingEffect); // we get the settings inside ColorGrading variable
         dofEffect.active = false;
         colorGradingEffect.active = false;
-
     }
     public void StartManualMenu(){
         titleAudio.PlayOneShot(menuButtonClickSound);
@@ -262,6 +279,11 @@ public class SpawnManager : MonoBehaviour
         Destroy(icef);
     }
 
+    private void BreakableBlockVariablesInit(){
+        // be careful that both lists have same prefab order, its important for later
+        breakableBlocksPrefabs = new List<GameObject> { breakableBlockPrefab, smallBreakableBlockPrefab };
+        breakableBlocksPrefabsBounds = new List<Vector3> { breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds };
+    }
     private void CloudLevelPlatformsInit()
     {
         // List of our different platforms that contain the HashSet of the block positions
