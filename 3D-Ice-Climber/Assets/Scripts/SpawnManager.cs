@@ -9,6 +9,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Rendering.PostProcessing;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -22,6 +23,8 @@ public class SpawnManager : MonoBehaviour
     public GameObject cloudPrefab;
     public GameObject powerupPrefab;
     public GameObject titleScreen;
+    public GameObject manualScreen;
+    public AudioClip menuButtonClickSound;
     public ParticleSystem cloudParticle;
     public List<List<GameObject>> listOfGrounds;
     public List<Tuple<float, HashSet<int>>> cloudLevelPlatforms;
@@ -29,6 +32,7 @@ public class SpawnManager : MonoBehaviour
     public Vector3 unbreakableBlockPrefabBounds, breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds, iceFallingPrefabBounds;
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI hpText;
+    public TextMeshProUGUI floorText;
     public TextMeshProUGUI gameOverText;
     public TextMeshProUGUI victoryText;
     public Button restartButton;
@@ -54,7 +58,6 @@ public class SpawnManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
         BoundsVariablesInit();
         // be careful that both lists have same prefab order, its important for later
         breakableBlocksPrefabs = new List<GameObject> { breakableBlockPrefab, smallBreakableBlockPrefab };
@@ -74,6 +77,7 @@ public class SpawnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
     }
 
     public void UpdateScore(int valueToAdd)
@@ -82,6 +86,13 @@ public class SpawnManager : MonoBehaviour
         {
             score += valueToAdd;
             scoreText.text = "Score: " + score;
+        }
+    }
+    public void UpdateFloor(int floorValue)
+    {
+        if (!gameIsOver)
+        {
+            floorText.text = "Floor: " + floorValue;
         }
     }
     public void UpdateHP(int valueToAdd)
@@ -123,6 +134,7 @@ public class SpawnManager : MonoBehaviour
 
     public void RestartGame()
     {
+        titleAudio.PlayOneShot(menuButtonClickSound);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     public void StartGame()
@@ -130,12 +142,33 @@ public class SpawnManager : MonoBehaviour
         score = 0;
         UpdateScore(0);
         UpdateHP(0);
+        UpdateFloor(0);
         titleScreen.SetActive(false);
         scoreText.gameObject.SetActive(true);
         hpText.gameObject.SetActive(true);
+        floorText.gameObject.SetActive(true);
         Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
         titleAudio.Stop();
+        gameCamera.GetComponent<AudioSource>().PlayOneShot(menuButtonClickSound);
         gameCamera.GetComponent<AudioSource>().Play();
+        PostProcessVolume ppVolume = gameCamera.GetComponent<PostProcessVolume>();
+        DepthOfField dofEffect;
+        ColorGrading colorGradingEffect;
+        ppVolume.profile.TryGetSettings(out dofEffect); // we get the settings inside bloom variable
+        ppVolume.profile.TryGetSettings(out colorGradingEffect); // we get the settings inside bloom variable
+        dofEffect.active = false;
+        colorGradingEffect.active = false;
+
+    }
+    public void StartManualMenu(){
+        titleAudio.PlayOneShot(menuButtonClickSound);
+        titleScreen.SetActive(false);
+        manualScreen.SetActive(true);
+    }
+    public void BackFromManualMenu(){
+        titleAudio.PlayOneShot(menuButtonClickSound);
+        manualScreen.SetActive(false);
+        titleScreen.SetActive(true);
     }
     private bool SpawnChicken()
     {

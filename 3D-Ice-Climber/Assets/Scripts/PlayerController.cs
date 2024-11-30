@@ -260,6 +260,7 @@ public class PlayerController : MonoBehaviour
         if (groundLine > playerLine)
         {
             playerLine = groundLine;
+            spawnManager.UpdateFloor(playerLine);
             spawnManager.UpdateScore(20);
             if (!cloudLevelStateActivated)
             {
