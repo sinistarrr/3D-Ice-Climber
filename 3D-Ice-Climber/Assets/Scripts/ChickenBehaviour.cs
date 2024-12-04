@@ -7,6 +7,7 @@ public class ChickenBehaviour : MonoBehaviour
     public float speed = 2.0f;
     public float runningSpeedMultiplier = 2.0f;
     public ParticleSystem chickenParticle;
+    private SpawnManager spawnManager;
     private float xBound = 17.0f;
     private int collisionsWithGround = 0;
     private bool runningAwayMode = false;
@@ -19,7 +20,7 @@ public class ChickenBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
     }
 
     // Update is called once per frame
@@ -62,6 +63,10 @@ public class ChickenBehaviour : MonoBehaviour
         else if (transform.position.x > xBound)
         {
             ManageIfChickenRunsAway(-xBound);
+        }
+        // If the chicken goes too far on the bottom of the screen
+        if(transform.position.y < spawnManager.GetVerticalLimitPosition()){
+            Destroy(gameObject);
         }
     }
 

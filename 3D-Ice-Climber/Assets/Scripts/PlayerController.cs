@@ -96,6 +96,12 @@ public class PlayerController : MonoBehaviour
         AddHorizontalMovementIfPlayerIsOnCloud();
     }
 
+    private void OnTriggerEnter(Collider collider){
+        if (!playerIsDead)
+        {
+            ManageIceCollisionWithPlayer(collider);
+        }
+    }
     private void OnCollisionEnter(Collision collision)
     {
         IncrementCollisionCounter();
@@ -315,7 +321,7 @@ public class PlayerController : MonoBehaviour
     }
     private void ManageChickenCollisionWithPlayer(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Chicken") || collision.gameObject.CompareTag("Falling Ice"))
+        if (collision.gameObject.CompareTag("Chicken"))
         {
 
             // If the object we hit is the enemy
@@ -329,6 +335,15 @@ public class PlayerController : MonoBehaviour
             ManagePlayerDeath(false);
             chickenExplosionParticle.Play();
 
+        }
+    }
+
+    private void ManageIceCollisionWithPlayer(Collider collider)
+    {
+        if (collider.gameObject.CompareTag("Falling Ice"))
+        {
+            ManagePlayerDeath(false);
+            chickenExplosionParticle.Play();
         }
     }
     public void ManagePlayerDeath(bool diedFalling)

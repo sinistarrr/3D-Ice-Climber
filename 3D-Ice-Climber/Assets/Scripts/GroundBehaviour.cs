@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 public class GroundBehaviour : MonoBehaviour
 {
-    public GameObject fallingIce;
+    private GameObject iceFalling;
     private SpawnManager spawnManager;
     private GameObject lastEncounteredChickenGameObject;
     private GameObject groundParent;
@@ -22,6 +22,7 @@ public class GroundBehaviour : MonoBehaviour
     {
         groundParent = transform.root.gameObject;
         spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
+        iceFalling = groundParent.transform.Find("Ice Falling").gameObject;
         // Spawn manager of the ice falling
         if (!groundParent.CompareTag("Cloud"))
         {
@@ -126,6 +127,7 @@ public class GroundBehaviour : MonoBehaviour
 
             yield return new WaitForSeconds(waitingTime);
 
+            if(iceFalling)
             StartCoroutine(MakeEarthQuake(2));
 
 
@@ -156,10 +158,7 @@ public class GroundBehaviour : MonoBehaviour
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, GetComponentInChildren<Collider>().bounds.size.y * 2);
         if (gameObject.activeSelf && !hitColliders.Any(collider => IsColliderBelow(collider)))
         {
-
-            float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManager.GetIceFallingBounds().y / 2;
-            Vector3 spawnPos = new Vector3(groundParent.transform.position.x, yPos, groundParent.transform.position.z);
-            Instantiate(fallingIce, spawnPos, fallingIce.transform.rotation);
+            iceFalling.SetActive(true);
         }
     }
 

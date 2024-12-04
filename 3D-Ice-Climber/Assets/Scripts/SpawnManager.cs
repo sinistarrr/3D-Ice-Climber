@@ -451,7 +451,8 @@ public class SpawnManager : MonoBehaviour
             if (j < (blockCount / 2))
             {
 
-                if (((rowNumber < 8) && (j < (5 + (rowNumber + 1) / 3) || (j > (blockCount / 2) - (6 + (rowNumber + 1) / 3)))) || ((rowNumber >= 8) && (j < 7) || (j > (blockCount / 2) - 8)))
+                if (((rowNumber < 8) && (j < (5 + (rowNumber + 1) / 3) || j > (blockCount / 2) - (6 + (rowNumber + 1) / 3))) 
+                 || ((rowNumber >= 8) && ((j < 7) || (j > (blockCount / 2) - 8))))
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + rowNumber * rowHeight, originBlockPosition.z);
                     GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
