@@ -10,6 +10,7 @@ public class CloudBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        transform.position = new Vector3(Random.Range(-xBound+1, xBound-1), transform.position.y, transform.position.z);
         if(Random.Range(0, 2) == 0){
             isMovingOnTheRight = false;
         }

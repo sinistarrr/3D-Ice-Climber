@@ -25188,7 +25188,7 @@ MonoBehaviour:
   jumpSound: {fileID: 8300000, guid: 113ee460fadc340e4957a7404a9fbb27, type: 3}
   deathSound: {fileID: 8300000, guid: 4bcde6de2166e41e284ec46d8a01fb90, type: 3}
   collectibleSound: {fileID: 8300000, guid: 08ab7053d586c458db3774d33c141a4b, type: 3}
-  victorySound: {fileID: 8300000, guid: 2849bde8e6080954a9b8f2419ffc1e0d, type: 3}
+  victorySound: {fileID: 8300000, guid: 96649fadfa95f4145a03e2fde0f5c343, type: 3}
   blockOnDestroySound:
   - {fileID: 8300000, guid: 2a921313c927f45238a0b8baabe3ab12, type: 3}
   - {fileID: 8300000, guid: ef2cde67276e7490e860213ae5393038, type: 3}

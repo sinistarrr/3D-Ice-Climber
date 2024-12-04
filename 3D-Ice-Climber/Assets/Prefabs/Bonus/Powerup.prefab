@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1089810984316394922}
   - component: {fileID: 1089810984330520174}
   - component: {fileID: 1089810984329553032}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FX_Dust_Prefab_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4766,7 +4766,7 @@ GameObject:
   - component: {fileID: 1844051405237897469}
   - component: {fileID: 1659294653531952316}
   - component: {fileID: 9212256712239380784}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Powerup
   m_TagString: Collectible
   m_Icon: {fileID: 0}
@@ -4876,7 +4876,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   collectibleParticle: {fileID: 1089810984330520174}
-  collectibleExplodeParticle: {fileID: 0}
 --- !u!64 &9212256712239380784
 MeshCollider:
   m_ObjectHideFlags: 0

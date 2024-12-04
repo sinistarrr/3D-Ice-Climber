@@ -30,6 +30,7 @@ public class FallingIceBehaviour : MonoBehaviour
 
     private IEnumerator IceGrowing()
     {
+        GetComponent<Collider>().enabled = false;
         List<float> iceScales = new List<float>(){0.05f , 0.125f, 0.25f, 0.5f, 1f};
         float waitingTime = 0.7f;
 
@@ -41,6 +42,7 @@ public class FallingIceBehaviour : MonoBehaviour
             yield return new WaitForSeconds(waitingTime);
             transform.position = originalPosition;
         }
+        GetComponent<Collider>().enabled = true;
         iceRigidbody.constraints = RigidbodyConstraints.None;
 
 

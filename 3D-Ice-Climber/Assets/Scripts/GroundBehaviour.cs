@@ -8,6 +8,7 @@ using Random = UnityEngine.Random;
 public class GroundBehaviour : MonoBehaviour
 {
     public GameObject fallingIce;
+    private SpawnManager spawnManager;
     private GameObject lastEncounteredChickenGameObject;
     private GameObject groundParent;
     private bool isCollidingWithChicken = false;
@@ -20,20 +21,43 @@ public class GroundBehaviour : MonoBehaviour
     void Start()
     {
         groundParent = transform.root.gameObject;
+        spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
         // Spawn manager of the ice falling
-        if(groundLine != 0){
-            StartCoroutine(SpawnFallingIcePeriodically());
+        if (!groundParent.CompareTag("Cloud"))
+        {
+            if (groundLine != 0)
+            {
+                if (groundLine > spawnManager.GetMaxRow())
+                {
+                    StartCoroutine(SpawnFallingIcePeriodically(100));
+                }
+                else if (groundLine > spawnManager.GetHardPhaseLineLimit())
+                {
+                    StartCoroutine(SpawnFallingIcePeriodically(10));
+                }
+                else if (groundLine > spawnManager.GetMidPhaseLineLimit())
+                {
+                    StartCoroutine(SpawnFallingIcePeriodically(50));
+                }
+                else
+                {
+                    StartCoroutine(SpawnFallingIcePeriodically(300));
+                }
+
+            }
+            if (groundLine % 2 != 0)
+            {
+                StartCoroutine(RandomEarthQuake());
+            }
         }
-        if(groundLine % 2 != 0){
-            StartCoroutine(RandomEarthQuake());
-        }
+
         initialPosition = groundParent.transform.position;
     }
 
     // Update is called once per frame
     void Update()
     {
-
+        ConstraintBlockPosition();
     }
 
 
@@ -76,13 +100,13 @@ public class GroundBehaviour : MonoBehaviour
         return lastEncounteredChickenGameObject;
     }
 
-    private IEnumerator SpawnFallingIcePeriodically()
+    private IEnumerator SpawnFallingIcePeriodically(float seconds)
     {
         float waitingTime;
 
         while (true)
         {
-            waitingTime = Random.Range(1.0f, 300.0f);
+            waitingTime = Random.Range(1.0f, seconds);
 
             yield return new WaitForSeconds(waitingTime);
 
@@ -91,7 +115,7 @@ public class GroundBehaviour : MonoBehaviour
         }
 
     }
-    
+
     private IEnumerator RandomEarthQuake()
     {
         float waitingTime;
@@ -103,7 +127,7 @@ public class GroundBehaviour : MonoBehaviour
             yield return new WaitForSeconds(waitingTime);
 
             StartCoroutine(MakeEarthQuake(2));
-            
+
 
         }
 
@@ -120,7 +144,7 @@ public class GroundBehaviour : MonoBehaviour
                 Mathf.PerlinNoise(eqSpeed * Time.time, 1) * ChooseBetweenTwoNumbers(1, -1),
                 Mathf.PerlinNoise(eqSpeed * Time.time, 2) * ChooseBetweenTwoNumbers(1, -1),
                 Mathf.PerlinNoise(eqSpeed * Time.time, 3) * ChooseBetweenTwoNumbers(1, -1));
-            
+
             //Wait for a frame so that we don't freeze Unity
             yield return null;
         }
@@ -133,8 +157,7 @@ public class GroundBehaviour : MonoBehaviour
         if (gameObject.activeSelf && !hitColliders.Any(collider => IsColliderBelow(collider)))
         {
 
-            SpawnManager spawnManagerScript = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
-            float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManagerScript.GetIceFallingBounds().y / 2;
+            float yPos = groundParent.transform.position.y - GetComponentInChildren<Collider>().bounds.size.y / 2 - spawnManager.GetIceFallingBounds().y / 2;
             Vector3 spawnPos = new Vector3(groundParent.transform.position.x, yPos, groundParent.transform.position.z);
             Instantiate(fallingIce, spawnPos, fallingIce.transform.rotation);
         }
@@ -153,12 +176,23 @@ public class GroundBehaviour : MonoBehaviour
         }
     }
 
-    private int ChooseBetweenTwoNumbers(int number1, int number2){
-        if(Random.Range(1, 3) == 1){
+    private int ChooseBetweenTwoNumbers(int number1, int number2)
+    {
+        if (Random.Range(1, 3) == 1)
+        {
             return number1;
         }
-        else{
+        else
+        {
             return number2;
+        }
+    }
+    // Y axis bound checking to prevent ground from going out of bounds
+    private void ConstraintBlockPosition()
+    {
+        // If the ground quits the screen from bottom
+        if(transform.position.y < spawnManager.GetVerticalLimitPosition()){
+            Destroy(gameObject);
         }
     }
 }

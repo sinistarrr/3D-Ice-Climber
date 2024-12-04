@@ -40,13 +40,15 @@ public class SpawnManager : MonoBehaviour
     public Button restartButton;
     public Button startButton;
     private Camera gameCamera;
+    private List<AudioSource> inGameAudioSources;
+    private AudioSource currentInGameAudioSource;
     private AudioSource titleAudio;
     private bool gameIsOver = false;
     private bool victory = false;
     private int score;
-    private int playerHP = 3;
+    private int playerHP = 0;
     private float rowHeight = 3.75f;
-    private int maxRowCount = 8;
+    private int maxRowCount = 5;
     private int currentRowCount = 5;
     private int blockCount = 68;
     private List<Vector3> breakableBlocksPrefabsBounds;
@@ -54,6 +56,15 @@ public class SpawnManager : MonoBehaviour
     private float xBound = 17.0f;
     private int chickensNumberLimit = 2;
     private float spawnManagerPositionYOffset = 1.75f;
+    private int difficultyLevel = -1;
+    private bool mediumPhase = false;
+    private bool hardPhase = false;
+    private bool cloudLevelPhase = false;
+    private int midPhaseLineLimit = 15;
+    private int hardPhaseLineLimit = 31;
+    private int totalCloudLevelPlatforms = 0;
+    private float verticalLimitPosition = -5.0f;
+
 
 
     // Start is called before the first frame update
@@ -63,12 +74,13 @@ public class SpawnManager : MonoBehaviour
         BreakableBlockVariablesInit();
         // Creation of the blocks in the game
         ListOfGroundsInit();
-        CloudLevelPlatformsInit();
         // Spawn manager of the chickens
         StartCoroutine(SpawnChickenPeriodically());
-        
+
         titleAudio = GetComponent<AudioSource>();
         gameCamera = Camera.main;
+        inGameAudioSources = gameCamera.GetComponents<AudioSource>().ToList();
+        currentInGameAudioSource = inGameAudioSources.Find(audiosource => audiosource.clip.name.Equals("xDeviruchi - 07 Exploring The Unknown"));
 
 
     }
@@ -76,7 +88,27 @@ public class SpawnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if (!mediumPhase && (currentRowCount > midPhaseLineLimit + 1))
+        {
+            currentInGameAudioSource.Stop();
+            currentInGameAudioSource = inGameAudioSources.Find(audiosource => audiosource.clip.name.Equals("xDeviruchi - 09 Decisive Battle"));
+            currentInGameAudioSource.Play();
+            mediumPhase = true;
+        }
+        else if (!hardPhase && (currentRowCount > hardPhaseLineLimit + 1))
+        {
+            currentInGameAudioSource.Stop();
+            currentInGameAudioSource = inGameAudioSources.Find(audiosource => audiosource.clip.name.Equals("xDeviruchi - 08 Mysterious Dungeon"));
+            currentInGameAudioSource.Play();
+            hardPhase = true;
+        }
+        else if (!cloudLevelPhase && (currentRowCount > GetMaxRow()))
+        {
+            currentInGameAudioSource.Stop();
+            currentInGameAudioSource = inGameAudioSources.Find(audiosource => audiosource.clip.name.Equals("xDeviruchi - 03 The Icy Cave"));
+            currentInGameAudioSource.Play();
+            cloudLevelPhase = true;
+        }
     }
 
     public void UpdateScore(int valueToAdd)
@@ -137,7 +169,8 @@ public class SpawnManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    public void ClickOnStartButton(){
+    public void ClickOnStartButton()
+    {
         titleAudio.PlayOneShot(menuButtonClickSound);
         titleButtons.SetActive(false);
         difficultyButtons.SetActive(true);
@@ -149,26 +182,33 @@ public class SpawnManager : MonoBehaviour
         Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
         InitializeStartingSounds();
         DesactivateMenuEffects();
+        CloudLevelPlatformsInit(difficulty);
 
     }
-    private void InitializeInGameStatsInfo(int difficulty){
+    private void InitializeInGameStatsInfo(int difficulty)
+    {
+        difficultyLevel = difficulty;
+        maxRowCount = 8 * difficulty * 2;
         score = 0;
         UpdateScore(0);
         UpdateHP(3 - difficulty);
         UpdateFloor(0);
     }
-    private void InitializeInGameText(){
+    private void InitializeInGameText()
+    {
         titleScreen.SetActive(false);
         scoreText.gameObject.SetActive(true);
         hpText.gameObject.SetActive(true);
         floorText.gameObject.SetActive(true);
     }
-    private void InitializeStartingSounds(){
+    private void InitializeStartingSounds()
+    {
         titleAudio.Stop();
-        gameCamera.GetComponent<AudioSource>().PlayOneShot(menuButtonClickSound);
-        gameCamera.GetComponent<AudioSource>().Play();
+        currentInGameAudioSource.PlayOneShot(menuButtonClickSound);
+        currentInGameAudioSource.Play();
     }
-    private void DesactivateMenuEffects(){
+    private void DesactivateMenuEffects()
+    {
         PostProcessVolume ppVolume = gameCamera.GetComponent<PostProcessVolume>();
         DepthOfField dofEffect;
         ColorGrading colorGradingEffect;
@@ -177,12 +217,14 @@ public class SpawnManager : MonoBehaviour
         dofEffect.active = false;
         colorGradingEffect.active = false;
     }
-    public void StartManualMenu(){
+    public void StartManualMenu()
+    {
         titleAudio.PlayOneShot(menuButtonClickSound);
         titleScreen.SetActive(false);
         manualScreen.SetActive(true);
     }
-    public void BackFromManualMenu(){
+    public void BackFromManualMenu()
+    {
         titleAudio.PlayOneShot(menuButtonClickSound);
         manualScreen.SetActive(false);
         titleScreen.SetActive(true);
@@ -279,13 +321,26 @@ public class SpawnManager : MonoBehaviour
         Destroy(icef);
     }
 
-    private void BreakableBlockVariablesInit(){
+    private void BreakableBlockVariablesInit()
+    {
         // be careful that both lists have same prefab order, its important for later
         breakableBlocksPrefabs = new List<GameObject> { breakableBlockPrefab, smallBreakableBlockPrefab };
         breakableBlocksPrefabsBounds = new List<Vector3> { breakableBlockPrefabBounds, smallBreakableBlockPrefabBounds };
     }
-    private void CloudLevelPlatformsInit()
+    private void CloudLevelPlatformsInit(int difficulty)
     {
+        if(difficulty == 1){
+            StoreEasyCloudLevel();
+        }
+        else if(difficulty == 2){
+            StoreMediumCloudLevel();
+        }
+        else{
+            StoreHardCloudLevel();
+        }
+    }
+
+    private void StoreEasyCloudLevel(){
         // List of our different platforms that contain the HashSet of the block positions
         cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
             new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
@@ -305,15 +360,56 @@ public class SpawnManager : MonoBehaviour
         };
     }
 
+    private void StoreMediumCloudLevel(){
+        // List of our different platforms that contain the HashSet of the block positions
+        cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
+            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 4.0f, new HashSet<int> { 11, 12, 13, 14}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 5.0f, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 8.0f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 13.0f, new HashSet<int> { 11, 12, 13, 14 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 13f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+        };
+    }
+
+    private void StoreHardCloudLevel(){
+        // List of our different platforms that contain the HashSet of the block positions
+        cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
+            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.0f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 1.25f, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 4.25f, new HashSet<int> { 6, 7, 8, 9, 10, 11, 12 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 5.5f, new HashSet<int> { 22, 23, 24 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 12.25f, new HashSet<int> { 9, 10, 11 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 14.0f, new HashSet<int> { 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 11) * rowHeight - 16.5f, new HashSet<int> { 13, 14, 15 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+        };
+    }
+
+
+
     private void ListOfGroundsInit()
     {
         // Create list of list of size rowCount
-        listOfGrounds = new List<List<GameObject>>(maxRowCount);
-        // Create all respective sub-lists of size blockCount
-        for (int i = 0; i < maxRowCount; i++)
-        {
-            listOfGrounds.Add(new List<GameObject>(blockCount));
-        }
+        listOfGrounds = new List<List<GameObject>>();
+        // // Create all respective sub-lists of size blockCount
+        // for (int i = 0; i < maxRowCount; i++)
+        // {
+        //     listOfGrounds.Add(new List<GameObject>(blockCount));
+        // }
         // Initialization of sub-lists values
         for (int i = 0; i < currentRowCount; i++)
         {
@@ -323,12 +419,39 @@ public class SpawnManager : MonoBehaviour
 
     public void CreateRow(int rowNumber)
     {
+        listOfGrounds.Add(new List<GameObject>(blockCount));
+        HashSet<int> holes = new HashSet<int>();
+        int index;
+        // Creates holes Set that contains the holes in our line
+        if ((difficultyLevel > 2) && (rowNumber > hardPhaseLineLimit))
+        {
+            for (int i = 2; i < blockCount / 2 - 2; i++)
+            {
+                if (Random.Range(0.0f, 1.0f) > 0.25f)
+                {
+                    holes.Add(i);
+                }
+            }
+        }
+        else if ((difficultyLevel > 1) && (rowNumber > midPhaseLineLimit))
+        {
+            for (int i = 2; i < blockCount / 2 - 2; i++)
+            {
+                if (Random.Range(0.0f, 1.0f) > 0.75f)
+                {
+                    holes.Add(i);
+                }
+            }
+        }
+        Debug.Log("Holes = " + String.Join(",", holes));
+        // creates an entire line (composed of one line and one subline)
         for (int j = 0; j < blockCount; j++)
         {
+            // creates the line on top
             if (j < (blockCount / 2))
             {
 
-                if (j < (5 + (rowNumber + 1) / 3) || (j > (blockCount / 2) - (6 + (rowNumber + 1) / 3)))
+                if (((rowNumber < 8) && (j < (5 + (rowNumber + 1) / 3) || (j > (blockCount / 2) - (6 + (rowNumber + 1) / 3)))) || ((rowNumber >= 8) && (j < 7) || (j > (blockCount / 2) - 8)))
                 {
                     Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + rowNumber * rowHeight, originBlockPosition.z);
                     GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
@@ -343,6 +466,7 @@ public class SpawnManager : MonoBehaviour
                     listOfGrounds[rowNumber].Add(brGameObject);
                 }
             }
+            // creates the subline, under
             else if (rowNumber > 0)
             {
                 int randomIndex;
@@ -390,6 +514,27 @@ public class SpawnManager : MonoBehaviour
                     listOfGrounds[rowNumber][j].SetActive(false);
                 }
             }
+            // holes handling :
+            if (difficultyLevel > 1)
+            {
+                if (j < (blockCount / 2))
+                {
+                    index = j;
+                }
+                else
+                {
+                    index = j - (blockCount / 2);
+                }
+                if (holes.Contains(index))
+                {
+                    if (listOfGrounds[rowNumber][j].activeSelf)
+                    {
+                        listOfGrounds[rowNumber][j].SetActive(false);
+                    }
+                }
+            }
+
+
         }
     }
 
@@ -483,7 +628,18 @@ public class SpawnManager : MonoBehaviour
     }
     public void AddRow()
     {
-        CreateRow(currentRowCount);
+        // Hard and medium mode handling
+        if ((currentRowCount % 2 == 1) && (difficultyLevel > 1) && (currentRowCount > midPhaseLineLimit) && (Random.Range(0.0f, 1.0f) > 0.75f))
+        {
+            Vector3 cloudPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight, cloudPrefab.transform.position.z - 0.5f);
+            SpawnCloudAtCoordinates(cloudPos, currentRowCount);
+            listOfGrounds.Add(new List<GameObject>(blockCount));
+        }
+        else
+        {
+            CreateRow(currentRowCount);
+        }
+
         IncrementCurrentRowCount();
     }
     public void DestroyRow(int rowNumber)
@@ -538,5 +694,35 @@ public class SpawnManager : MonoBehaviour
     public int GetPlayerHP()
     {
         return playerHP;
+    }
+    public AudioSource GetCurrentAudioSource()
+    {
+        return currentInGameAudioSource;
+    }
+    public int GetMidPhaseLineLimit(){
+        return midPhaseLineLimit;
+    }
+    public int GetHardPhaseLineLimit(){
+        return hardPhaseLineLimit;
+    }
+    public bool GetCloudLevelPhase(){
+        return cloudLevelPhase;
+    }
+    public List<Tuple<float, HashSet<int>>> GetCloudLevelPlatforms(){
+        return cloudLevelPlatforms;
+    }
+    // complexity : O(1) source C# List documentation
+    public int GetCloudLevelPlatformsCount(){
+        return cloudLevelPlatforms.Count();
+    }
+
+    public bool GetVictoryState(){
+        return victory;
+    }
+    public float GetVerticalLimitPosition(){
+        return verticalLimitPosition;
+    }
+    public void SetVerticalLimitPositon(float value){
+        verticalLimitPosition = value;
     }
 }
