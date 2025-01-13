@@ -22,23 +22,23 @@ public class GroundBehaviour : MonoBehaviour
     {
         groundParent = transform.root.gameObject;
         spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManager>();
-        iceFalling = groundParent.transform.Find("Ice Falling").gameObject;
         // Spawn manager of the ice falling
         if (!groundParent.CompareTag("Cloud"))
         {
+            iceFalling = groundParent.transform.Find("Ice Falling").gameObject;
             if (groundLine != 0)
             {
                 if (groundLine > spawnManager.GetMaxRow())
                 {
-                    StartCoroutine(SpawnFallingIcePeriodically(100));
+                    StartCoroutine(SpawnFallingIcePeriodically(300));
                 }
                 else if (groundLine > spawnManager.GetHardPhaseLineLimit())
                 {
-                    StartCoroutine(SpawnFallingIcePeriodically(10));
+                    StartCoroutine(SpawnFallingIcePeriodically(100));
                 }
                 else if (groundLine > spawnManager.GetMidPhaseLineLimit())
                 {
-                    StartCoroutine(SpawnFallingIcePeriodically(50));
+                    StartCoroutine(SpawnFallingIcePeriodically(200));
                 }
                 else
                 {

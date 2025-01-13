@@ -10,6 +10,9 @@ using Random = UnityEngine.Random;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Rendering.PostProcessing;
+using System.Numerics;
+using Vector3 = UnityEngine.Vector3;
+using Quaternion = UnityEngine.Quaternion;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -26,6 +29,8 @@ public class SpawnManager : MonoBehaviour
     public GameObject manualScreen;
     public GameObject titleButtons;
     public GameObject difficultyButtons;
+    public List<GameObject> ufoPrefabs;
+    private List<GameObject> ufos;
     public AudioClip menuButtonClickSound;
     public ParticleSystem cloudParticle;
     public List<List<GameObject>> listOfGrounds;
@@ -64,21 +69,25 @@ public class SpawnManager : MonoBehaviour
     private int hardPhaseLineLimit = 31;
     private int totalCloudLevelPlatforms = 0;
     private float verticalLimitPosition = -5.0f;
+    private float cloudLevelStartingHeight;
+    private bool ufoIsInUse = false;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
+        gameCamera = Camera.main;
         BoundsVariablesInit();
         BreakableBlockVariablesInit();
         // Creation of the blocks in the game
         ListOfGroundsInit();
+        // Creations of the UFOs
+        UFOinit();
         // Spawn manager of the chickens
         StartCoroutine(SpawnChickenPeriodically());
-
+        StartCoroutine(SpawnUFOSPeriodically());
         titleAudio = GetComponent<AudioSource>();
-        gameCamera = Camera.main;
         inGameAudioSources = gameCamera.GetComponents<AudioSource>().ToList();
         currentInGameAudioSource = inGameAudioSources.Find(audiosource => audiosource.clip.name.Equals("xDeviruchi - 07 Exploring The Unknown"));
 
@@ -88,6 +97,15 @@ public class SpawnManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        ManageSoundtrackTransition();
+    }
+
+    private void UFOinit(){
+        Vector3 camPos = gameCamera.transform.position;
+        ufos = new List<GameObject>(ufoPrefabs.Count());
+        ufoPrefabs.ForEach(ufo => ufos.Add(Instantiate(ufo, new Vector3(camPos.x, camPos.y + ufo.GetComponent<UFOBehaviour>().GetUFOHeightMargin(), camPos.z), ufo.transform.rotation)));
+    }
+    private void ManageSoundtrackTransition(){
         if (!mediumPhase && (currentRowCount > midPhaseLineLimit + 1))
         {
             currentInGameAudioSource.Stop();
@@ -119,6 +137,7 @@ public class SpawnManager : MonoBehaviour
             scoreText.text = "Score: " + score;
         }
     }
+
     public void UpdateFloor(int floorValue)
     {
         if (!gameIsOver)
@@ -179,7 +198,8 @@ public class SpawnManager : MonoBehaviour
     {
         InitializeInGameStatsInfo(difficulty);
         InitializeInGameText();
-        Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
+        GameObject instantiatedPlayer = Instantiate(player, new Vector3(-7, originBlockPosition.y + unbreakableBlockPrefabBounds.y / 2, -0.5f), player.transform.rotation);
+        instantiatedPlayer.GetComponent<PlayerController>().RespawnPlayerOnLine(0, GetComponent<SpawnManager>());
         InitializeStartingSounds();
         DesactivateMenuEffects();
         CloudLevelPlatformsInit(difficulty);
@@ -189,9 +209,11 @@ public class SpawnManager : MonoBehaviour
     {
         difficultyLevel = difficulty;
         maxRowCount = 8 * difficulty * 2;
+        cloudLevelStartingHeight = maxRowCount * rowHeight;
         score = 0;
         UpdateScore(0);
-        UpdateHP(3 - difficulty);
+        UpdateHP(99 - difficulty);
+        // UpdateHP(3 - difficulty);
         UpdateFloor(0);
     }
     private void InitializeInGameText()
@@ -262,6 +284,18 @@ public class SpawnManager : MonoBehaviour
         return true;
     }
 
+    private bool SpawnUFO(){
+        if(GetCurrentRowCount() - 1 >= GetMaxRow() - 1){
+            return false;
+        }
+        else if(!ufoIsInUse && mediumPhase){
+            UFOBehaviour ufoScript = ufos[Random.Range(0, 3)].GetComponent<UFOBehaviour>();
+            ufoScript.StartUFO();
+            SetUFOIsInUse(true);
+        }
+        return true;
+    }
+
     private int GetLineToSpawnChickenOn(List<GameObject> gameObjects, int numberOfChickenObjects)
     {
         float firstLineYPos = transform.position.y - spawnManagerPositionYOffset;
@@ -300,6 +334,24 @@ public class SpawnManager : MonoBehaviour
             }
         }
 
+    }
+
+    private IEnumerator SpawnUFOSPeriodically(){
+        int waitingTime;
+        
+        while (true)
+        {
+            waitingTime = Random.Range(2, 7);
+
+            yield return new WaitForSeconds(waitingTime);
+
+
+            if(!SpawnUFO()){
+                break;
+            }
+            
+
+        }
     }
     private IEnumerator RestartGameAfterFewSeconds(int seconds)
     {
@@ -343,59 +395,58 @@ public class SpawnManager : MonoBehaviour
     private void StoreEasyCloudLevel(){
         // List of our different platforms that contain the HashSet of the block positions
         cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
-            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.0f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 1.25f, new HashSet<int> { 19, 20, 21, 22 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 4.25f, new HashSet<int> { 6, 7, 8, 9, 10, 11, 12 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 5.5f, new HashSet<int> { 22, 23, 24 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 12.25f, new HashSet<int> { 9, 10, 11 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 14.0f, new HashSet<int> { 20, 21, 22 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 11) * rowHeight - 16.5f, new HashSet<int> { 13, 14, 15 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+            new Tuple<float, HashSet<int>>(0, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>(2.5f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>(6.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(10f, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>(10.75f, new HashSet<int> { 6, 7, 8, 9, 10, 11, 12 }),
+            new Tuple<float, HashSet<int>>(13.25f, new HashSet<int> { 22, 23, 24 }),
+            new Tuple<float, HashSet<int>>(13.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>(17.75f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(20.75f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>(21.5f, new HashSet<int> { 9, 10, 11 }),
+            new Tuple<float, HashSet<int>>(23.5f, new HashSet<int> { 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>(24.75f, new HashSet<int> { 13, 14, 15 }),
+            new Tuple<float, HashSet<int>>(27.75f, new HashSet<int> { 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>(30.75f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
         };
     }
 
     private void StoreMediumCloudLevel(){
         // List of our different platforms that contain the HashSet of the block positions
         cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
-            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.5f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 4.0f, new HashSet<int> { 11, 12, 13, 14}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 5.0f, new HashSet<int> { 19, 20, 21, 22 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 8.0f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 13.0f, new HashSet<int> { 11, 12, 13, 14 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 13f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18, 19, 20 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+            new Tuple<float, HashSet<int>>(0, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>(2.5f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>(6, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(7.25f, new HashSet<int> { 11, 12, 13, 14}),
+            new Tuple<float, HashSet<int>>(10, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>(10.75f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(13.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
+            new Tuple<float, HashSet<int>>(17.75f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(20.75f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>(20.75f, new HashSet<int> { 11, 12, 13, 14 }),
+            new Tuple<float, HashSet<int>>(24.5f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(27.75f, new HashSet<int> { 15, 16, 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>(30.75f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
         };
     }
 
     private void StoreHardCloudLevel(){
         // List of our different platforms that contain the HashSet of the block positions
-        cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
-            new Tuple<float, HashSet<int>>(maxRowCount * rowHeight, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+1) * rowHeight - rowHeight / 3f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
-            new Tuple<float, HashSet<int>>((maxRowCount+2) * rowHeight - 1.0f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 3) * rowHeight - 1.25f, new HashSet<int> { 19, 20, 21, 22 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 4) * rowHeight - 4.25f, new HashSet<int> { 6, 7, 8, 9, 10, 11, 12 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 5) * rowHeight - 5.5f, new HashSet<int> { 22, 23, 24 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 6) * rowHeight - 8.75f, new HashSet<int> { 13, 14, 15, 16, 17, 18 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 7) * rowHeight - 8.5f, new HashSet<int> {}),
-            new Tuple<float, HashSet<int>>((maxRowCount + 8) * rowHeight - 9.25f, new HashSet<int> { 17, 18, 19, 20 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 9) * rowHeight - 12.25f, new HashSet<int> { 9, 10, 11 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 10) * rowHeight - 14.0f, new HashSet<int> { 20, 21, 22 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 11) * rowHeight - 16.5f, new HashSet<int> { 13, 14, 15 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 12) * rowHeight - 17.25f, new HashSet<int> { 15, 16, 17, 18 }),
-            new Tuple<float, HashSet<int>>((maxRowCount + 13) * rowHeight - 18f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
+         cloudLevelPlatforms = new List<Tuple<float, HashSet<int>>>{
+            new Tuple<float, HashSet<int>>(0, new HashSet<int> { 8, 9, 16, 17, 24, 25 }),
+            new Tuple<float, HashSet<int>>(2.5f, new HashSet<int> { 5,6,11,12,13,14,19,20,21,22,27,28 }),
+            new Tuple<float, HashSet<int>>(5.0f, new HashSet<int> {21,22,23,24}),
+            new Tuple<float, HashSet<int>>(7.0f, new HashSet<int> { 11, 12, 13, 14}),
+            new Tuple<float, HashSet<int>>(8.0f, new HashSet<int> { 19, 20, 21, 22 }),
+            new Tuple<float, HashSet<int>>(10.25f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(13.25f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(16, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(18.75f, new HashSet<int> { 14,15,16,17,18}),
+            new Tuple<float, HashSet<int>>(22f, new HashSet<int> { 12,13,14 }),
+            new Tuple<float, HashSet<int>>(25f, new HashSet<int> { 17, 18, 19, 20 }),
+            new Tuple<float, HashSet<int>>(27.75f, new HashSet<int> {}),
+            new Tuple<float, HashSet<int>>(30.75f, new HashSet<int> {8, 9, 10, 11, 12, 13, 21, 22, 23, 24, 25})
         };
     }
 
@@ -405,11 +456,6 @@ public class SpawnManager : MonoBehaviour
     {
         // Create list of list of size rowCount
         listOfGrounds = new List<List<GameObject>>();
-        // // Create all respective sub-lists of size blockCount
-        // for (int i = 0; i < maxRowCount; i++)
-        // {
-        //     listOfGrounds.Add(new List<GameObject>(blockCount));
-        // }
         // Initialization of sub-lists values
         for (int i = 0; i < currentRowCount; i++)
         {
@@ -443,7 +489,6 @@ public class SpawnManager : MonoBehaviour
                 }
             }
         }
-        Debug.Log("Holes = " + String.Join(",", holes));
         // creates an entire line (composed of one line and one subline)
         for (int j = 0; j < blockCount; j++)
         {
@@ -570,15 +615,17 @@ public class SpawnManager : MonoBehaviour
 
     public void SpawnCloudLevel()
     {
+        bool previousCloudPlatformState = false;
         for (int i = 0; i < cloudLevelPlatforms.Count(); i++)
         {
-            InstantiatePlatform(i, cloudLevelPlatforms[i]);
+            previousCloudPlatformState = InstantiatePlatform(i, cloudLevelPlatforms[i], previousCloudPlatformState);
         }
     }
 
-    private void InstantiatePlatform(int index, Tuple<float, HashSet<int>> platform)
+    private bool InstantiatePlatform(int index, Tuple<float, HashSet<int>> platform, bool previousCloudPlatformState)
     {
         bool hasPowerUp = Random.value < 0.5f;
+        bool updateCloudHistory = previousCloudPlatformState;
         int blockToSpawnPowerUpOn = -1;
         int currentBlockNumber = 0;
 
@@ -595,11 +642,11 @@ public class SpawnManager : MonoBehaviour
                     // Powerup spawning
                     if (hasPowerUp && (currentBlockNumber == blockToSpawnPowerUpOn))
                     {
-                        Vector3 powerupSpawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1 + unbreakableBlockPrefabBounds.y * 1.5f, originBlockPosition.z);
+                        Vector3 powerupSpawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + cloudLevelStartingHeight + platform.Item1 + unbreakableBlockPrefabBounds.y * 1.5f, originBlockPosition.z);
                         Instantiate(powerupPrefab, powerupSpawnPos, powerupPrefab.transform.rotation);
                     }
                     // Platform block spawning
-                    Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + platform.Item1, originBlockPosition.z);
+                    Vector3 spawnPos = new Vector3(originBlockPosition.x + j * unbreakableBlockPrefabBounds.x, originBlockPosition.y + cloudLevelStartingHeight + platform.Item1, originBlockPosition.z);
                     GameObject unbrGameObject = Instantiate(unbreakableBlockPrefab, spawnPos, unbreakableBlockPrefab.transform.rotation);
                     unbrGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(maxRowCount + index);
                     currentBlockNumber++;
@@ -608,17 +655,28 @@ public class SpawnManager : MonoBehaviour
         }
         else
         {
-            Vector3 cloudPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + platform.Item1, cloudPrefab.transform.position.z - 0.5f);
-            SpawnCloudAtCoordinates(cloudPos, maxRowCount + index);
+            Vector3 cloudPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + cloudLevelStartingHeight + platform.Item1, cloudPrefab.transform.position.z - 0.5f);
+            // we spawn a cloud that goes in the opposite direction from the previous one to avoid randomization issues (ex. two clouds on top of each other at same speed)
+            SpawnCloudAtCoordinatesWithDirection(cloudPos, maxRowCount + index, previousCloudPlatformState);
+            updateCloudHistory = !previousCloudPlatformState;
         }
 
         IncrementCurrentRowCount();
+        return updateCloudHistory;
     }
 
-    public void SpawnCloudAtCoordinates(Vector3 spawnPos, int lineCount)
+    // public void SpawnCloudAtCoordinates(Vector3 spawnPos, int lineCount)
+    // {
+    //     GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
+    //     cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
+    //     Instantiate(cloudParticle, new Vector3(transform.position.x, spawnPos.y, spawnPos.z), transform.rotation);
+    // }
+
+    public void SpawnCloudAtCoordinatesWithDirection(Vector3 spawnPos, int lineCount, bool direction)
     {
         GameObject cloudGameObject = Instantiate(cloudPrefab, spawnPos, cloudPrefab.transform.rotation);
         cloudGameObject.GetComponentInChildren<GroundBehaviour>().SetLine(lineCount);
+        cloudGameObject.GetComponent<CloudBehaviour>().SetIsMovingRight(direction);
         Instantiate(cloudParticle, new Vector3(transform.position.x, spawnPos.y, spawnPos.z), transform.rotation);
     }
 
@@ -633,7 +691,7 @@ public class SpawnManager : MonoBehaviour
         if ((currentRowCount % 2 == 1) && (difficultyLevel > 1) && (currentRowCount > midPhaseLineLimit) && (Random.Range(0.0f, 1.0f) > 0.75f))
         {
             Vector3 cloudPos = new Vector3(cloudPrefab.transform.position.x, originBlockPosition.y + currentRowCount * rowHeight, cloudPrefab.transform.position.z - 0.5f);
-            SpawnCloudAtCoordinates(cloudPos, currentRowCount);
+            SpawnCloudAtCoordinatesWithDirection(cloudPos, currentRowCount, Random.Range(0, 2) == 0);
             listOfGrounds.Add(new List<GameObject>(blockCount));
         }
         else
@@ -725,5 +783,13 @@ public class SpawnManager : MonoBehaviour
     }
     public void SetVerticalLimitPositon(float value){
         verticalLimitPosition = value;
+    }
+
+    public float GetCloudLevelStartingHeight(){
+        return cloudLevelStartingHeight;
+    }
+ 
+    public void SetUFOIsInUse(bool value){
+        ufoIsInUse = value;
     }
 }

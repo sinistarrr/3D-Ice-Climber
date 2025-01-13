@@ -19,7 +19,7 @@ public class PlaneLimitBehaviour : MonoBehaviour
 
     private void OnTriggerEnter(Collider other){
         if(other.gameObject.CompareTag("Player")){
-            other.gameObject.GetComponent<PlayerController>().ManagePlayerDeath(true);
+            other.gameObject.GetComponent<PlayerController>().ManagePlayerDeath(PlayerController.DeathCause.Falling);
         }
         else if(!other.transform.root.gameObject.CompareTag("Player")){
             Destroy(other.gameObject);

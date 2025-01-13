@@ -45,7 +45,7 @@ public class PlayerController : MonoBehaviour
     private int collisions = 0;
     private int playerLine = 0;
     private float cameraMoveDistance = 0;
-    private float cameraSpeed = 6f;
+    private float cameraSpeed = 3f;
     private Vector3 initialCameraPosition;
     private float rowHeight;
     private bool cloudLevelStateActivated = false;
@@ -53,8 +53,14 @@ public class PlayerController : MonoBehaviour
     private bool playerReachedFourthStage = false;
     private int playerHP;
     private static System.Random rng = new System.Random();
+    private bool plyHasReachedFinalStage = false;
 
-
+    public enum DeathCause
+    {
+        Chicken,
+        Falling,
+        UFOLaser
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -160,12 +166,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void IncrementCollisionCounter()
+    public void IncrementCollisionCounter()
     {
         collisions++;
     }
 
-    private void DecreaseCollisionCounter()
+    public void DecreaseCollisionCounter()
     {
         collisions--;
     }
@@ -231,15 +237,6 @@ public class PlayerController : MonoBehaviour
         fbChild.transform.localScale = parentOfBlockGameObject.transform.localScale;
         fbChild.GetComponent<MeshFilter>().sharedMesh = Instantiate(mesh); // we assign a copy of the mesh to new meshfilter
         fbRenderer.sharedMaterial = parentOfBlockGameObject.GetComponentInChildren<MeshRenderer>().sharedMaterial;
-        
-        // GameObject go = new GameObject();
-        // MeshRenderer newmeshrenderer = go.AddComponent<MeshRenderer>();
-        // // Do stuff with newmeshrenderer, eg...
-        // newmeshrenderer.sharedMaterial = theAwesomeMaterial;
-        // newmeshrenderer.shadowCastingMode = ShadowCastingMode.off;
-        // // etc.
-
-
     }
 
     private void ManageGameBehaviourWhenPlayerOnTheGround(GameObject parentOfBlockGameObject, Collision collision)
@@ -247,7 +244,6 @@ public class PlayerController : MonoBehaviour
         if (collision.contacts[0].point.y > parentOfBlockGameObject.transform.position.y)
         {
             collidingWithGround = true;
-            Debug.Log("Line of the block is : " + parentOfBlockGameObject.GetComponentInChildren<GroundBehaviour>().GetLine());
             CheckIfPlayerIsOnCloud(parentOfBlockGameObject);
             ManagePlayerAnimationAfterHasHitBlock();
             int groundLine = parentOfBlockGameObject.GetComponentInChildren<GroundBehaviour>().GetLine();
@@ -269,44 +265,38 @@ public class PlayerController : MonoBehaviour
             spawnManager.UpdateScore(20);
             if (!cloudLevelStateActivated)
             {
-                if (playerLine > spawnManager.GetMaxRow() - 3)
+                if (playerLine > spawnManager.GetMaxRow() - 4)
                 {
                     cloudLevelStateActivated = true;
-                    // spawnManager.SpawnCloudLevelFirstStage();
                     spawnManager.SpawnCloudLevel();
                     spawnManager.SpawnMountainBorders();
-                    cameraMoveDistance = 1;
+                    cameraMoveDistance = rowHeight;
                 }
                 else if (playerLine > spawnManager.GetCurrentMiddleRow() - 1)
                 {
                     spawnManager.AddRow();
-                    cameraMoveDistance = 1;
+                    cameraMoveDistance = rowHeight;
                 }
             }
             else
             {
                 if (playerLine == spawnManager.GetMaxRow() - 1)
                 {
-                    cameraMoveDistance = 1;
+                    cameraMoveDistance = rowHeight;
                 }
                 else if (playerLine == spawnManager.GetMaxRow() + 1)
                 {
-                    cameraMoveDistance = 3;
-                }
-                else if (!playerReachedFourthStage && (playerLine == (spawnManager.GetMaxRow() + spawnManager.GetCloudLevelPlatformsCount() - 8) || playerLine == (spawnManager.GetMaxRow() + spawnManager.GetCloudLevelPlatformsCount() - 9)))
-                {
-                    playerReachedFourthStage = true;
-                    cameraMoveDistance = 3;
-                }
-                else if (playerLine == spawnManager.GetMaxRow() + spawnManager.GetCloudLevelPlatformsCount() - 6)
-                {
-                    cameraMoveDistance = 2.5f;
+                    cameraMoveDistance = 3 * rowHeight;
                 }
                 else if (playerLine == spawnManager.GetMaxRow() + spawnManager.GetCloudLevelPlatformsCount() - 1)
                 {
-                    cameraMoveDistance = 3.0f;
+                    cameraMoveDistance = spawnManager.GetCloudLevelStartingHeight() + 37.25f - gameCamera.transform.position.y;
                     spawnManager.SpawnStar();
                     SetJumpForce(22.0f);
+                }
+                else if ((playerLine < spawnManager.GetMaxRow() + spawnManager.GetCloudLevelPlatformsCount() - 1) && (playerLine > spawnManager.GetMaxRow() + 1)){
+                    int cloudLevelPlatformNb = playerLine - spawnManager.GetMaxRow();
+                    cameraMoveDistance = spawnManager.GetCloudLevelPlatforms()[cloudLevelPlatformNb].Item1 - spawnManager.GetCloudLevelPlatforms()[cloudLevelPlatformNb-1].Item1;
                 }
             }
         }
@@ -332,7 +322,7 @@ public class PlayerController : MonoBehaviour
             // And finally we add force in the direction of dir and multiply it by force. 
             // This will push back the player
             playerRb.AddForce(dir * enemyPushForce, ForceMode.Impulse);
-            ManagePlayerDeath(false);
+            ManagePlayerDeath(DeathCause.Chicken);
             chickenExplosionParticle.Play();
 
         }
@@ -342,16 +332,16 @@ public class PlayerController : MonoBehaviour
     {
         if (collider.gameObject.CompareTag("Falling Ice"))
         {
-            ManagePlayerDeath(false);
+            ManagePlayerDeath(DeathCause.Chicken);
             chickenExplosionParticle.Play();
         }
     }
-    public void ManagePlayerDeath(bool diedFalling)
+    public void ManagePlayerDeath(DeathCause deathCause)
     {
         SetPlayerIsDead(true);
         UpdateIfGameIsOver();
         DecreasePlayerHP();
-        ManageRespawningOfPlayer(diedFalling);
+        ManageRespawningOfPlayer(deathCause);
         playerDirtParticle.Stop();
         playerAudio.Stop();
         playerAudio.PlayOneShot(deathSound, 1.0f);
@@ -360,7 +350,7 @@ public class PlayerController : MonoBehaviour
             playerAnim.enabled = true;
         }
         ManageDeathAnimation();
-        if (diedFalling)
+        if (deathCause == DeathCause.Falling)
         {
             StartCoroutine(FreezePlayerOnFall());
         }
@@ -371,21 +361,21 @@ public class PlayerController : MonoBehaviour
         playerRb.constraints = RigidbodyConstraints.FreezeAll;
 
     }
-    private void ManageRespawningOfPlayer(bool diedFalling)
+    private void ManageRespawningOfPlayer(DeathCause deathCause)
     {
         if (!gameOver)
         {
-            StartCoroutine(RespawnPlayer(diedFalling));
+            StartCoroutine(RespawnPlayer(deathCause));
         }
     }
 
-    private IEnumerator RespawnPlayer(bool diedFalling)
+    private IEnumerator RespawnPlayer(DeathCause deathCause)
     {
         yield return new WaitForSeconds(3.0f);
-        RespawnPlayerOnLine(playerLine);
+        RespawnPlayerOnLine(playerLine, spawnManager);
         SetPlayerIsDead(false);
         ResetPlayerAnimation();
-        if (diedFalling)
+        if (deathCause == DeathCause.Falling)
         {
             playerRb.constraints = RigidbodyConstraints.None;
             playerRb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
@@ -393,7 +383,7 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    public void RespawnPlayerOnLine(int line)
+    public void RespawnPlayerOnLine(int line, SpawnManager spawnManager)
     {
         // If Player in Cloud Level
         if (line > spawnManager.GetMaxRow() - 1)
@@ -403,22 +393,23 @@ public class PlayerController : MonoBehaviour
             Tuple<float, HashSet<int>> platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow()];
             List<int> cloudLevelGround;
             float height;
+            int i = 1;
 
             // If platform is a cloud, we get the one below.
-            if (platform.Item2.Count() == 0)
+            while (platform.Item2.Count() == 0)
             {
-                platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow() - 1];
+                platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow() - i];
+                i++;
             }
             cloudLevelGround = platform.Item2.ToList();
-            height = platform.Item1;
+            height = spawnManager.GetCloudLevelStartingHeight() + platform.Item1;
 
             cloudLevelGround.OrderBy(_ => rng.Next());
-            int blockNbToSpawnPlayerOn = cloudLevelGround.Find(block => IsPositionAvailable(new Vector3(ogBlockPos.x + block * unbrBlockPrefabBounds.x, ogBlockPos.y + height, ogBlockPos.z)));
-            RespawnPlayerOnCloudLevelBlock(platform, unbrBlockPrefabBounds, ogBlockPos, blockNbToSpawnPlayerOn);
+            int blockNbToSpawnPlayerOn = cloudLevelGround.Find(block => IsPositionAvailable(new Vector3(ogBlockPos.x + block * unbrBlockPrefabBounds.x, ogBlockPos.y + height, ogBlockPos.z), spawnManager));
+            RespawnPlayerOnCloudLevelBlock(platform, unbrBlockPrefabBounds, ogBlockPos, blockNbToSpawnPlayerOn, spawnManager);
         }
         else
         {
-
             // Get a list from script spawnManager that corresponds to specific line that player is on
             // GetRange makes us get only the half of it from 0 to half of max number of blocks on a block line.
             // OrderBy shuffles the result randomly and stores it in a list with ToList()
@@ -434,29 +425,29 @@ public class PlayerController : MonoBehaviour
                 ground.Add(new Tuple<int, GameObject>(i, spawnManagerGround[i]));
             }
             ground = ground.OrderBy(_ => rng.Next()).ToList();
-            int blockNbToSpawnPlayerOn = ground.Find(block => IsBlockAvailable(block.Item2)).Item1;
-            RespawnPlayerOnBlock(line, blockNbToSpawnPlayerOn);
+            int blockNbToSpawnPlayerOn = ground.Find(block => IsBlockAvailable(block.Item2, spawnManager)).Item1;
+            RespawnPlayerOnBlock(line, blockNbToSpawnPlayerOn, spawnManager);
         }
 
     }
 
-    private void RespawnPlayerOnBlock(int line, int blockNb)
+    private void RespawnPlayerOnBlock(int line, int blockNb, SpawnManager spawnManager)
     {
         GameObject blockParent = spawnManager.GetBlock(line, blockNb).transform.root.gameObject;
         float yPos = blockParent.transform.position.y + blockParent.GetComponentInChildren<Collider>().bounds.size.y / 2;
 
         transform.position = new Vector3(blockParent.transform.position.x, yPos, transform.position.z);
     }
-    private void RespawnPlayerOnCloudLevelBlock(Tuple<float, HashSet<int>> platform, Vector3 unbrBlockPrefabBounds, Vector3 ogBlockPos, int blockNb)
+    private void RespawnPlayerOnCloudLevelBlock(Tuple<float, HashSet<int>> platform, Vector3 unbrBlockPrefabBounds, Vector3 ogBlockPos, int blockNb, SpawnManager spawnManager)
     {
-        transform.position = new Vector3(ogBlockPos.x + unbrBlockPrefabBounds.x * blockNb, platform.Item1 + ogBlockPos.y + unbrBlockPrefabBounds.y / 2, transform.position.z);
+        transform.position = new Vector3(ogBlockPos.x + unbrBlockPrefabBounds.x * blockNb, spawnManager.GetCloudLevelStartingHeight() + platform.Item1 + ogBlockPos.y + unbrBlockPrefabBounds.y / 2, transform.position.z);
     }
 
-    private bool IsBlockAvailable(GameObject block)
+    private bool IsBlockAvailable(GameObject block, SpawnManager spawnManager)
     {
-        return block.activeSelf && IsPositionAvailable(block.transform.position);
+        return block.activeSelf && IsPositionAvailable(block.transform.position, spawnManager);
     }
-    private bool IsPositionAvailable(Vector3 blockPosition)
+    private bool IsPositionAvailable(Vector3 blockPosition, SpawnManager spawnManager)
     {
         // For each block on the line, do the following :
         Collider[] hitColliders = Physics.OverlapSphere(blockPosition, spawnManager.unbreakableBlockPrefabBounds.x * 2);
@@ -566,7 +557,7 @@ public class PlayerController : MonoBehaviour
         }
         // If the player goes too far on the bottom of the screen
         if(!playerIsDead && (transform.position.y < spawnManager.GetVerticalLimitPosition())){
-            ManagePlayerDeath(true);
+            ManagePlayerDeath(DeathCause.Falling);
         }
     }
 
@@ -645,13 +636,22 @@ public class PlayerController : MonoBehaviour
         {
             UpdateCameraAndLimitPosition();
         }
+        // if(plyHasReachedFinalStage){
+        //     SetupCameraAndLimitPositionForFinalJump();
+        // }
+        
     }
+
+    // private void UpdateCameraAndLimitPosition(){
+    //     Vector3 destinationPos = new Vector3(initialCameraPosition.x, spawnManager.GetCloudLevelStartingHeight() + 37.25f, initialCameraPosition.z);
+    //     Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoveDistance);
+    // }
 
     private void UpdateCameraAndLimitPosition()
     {
-        Vector3 destinationPos = initialCameraPosition + Vector3.up * rowHeight * cameraMoveDistance;
+        Vector3 destinationPos = initialCameraPosition + Vector3.up * cameraMoveDistance;
         Vector3 updatedPos = Vector3.MoveTowards(gameCamera.transform.position, destinationPos, cameraSpeed * Time.deltaTime * cameraMoveDistance);
-        float destinationLimitPos = spawnManager.GetVerticalLimitPosition() + rowHeight * cameraMoveDistance;
+        float destinationLimitPos = spawnManager.GetVerticalLimitPosition() + cameraMoveDistance;
         //Vector3 updatedLimitPos = Vector3.MoveTowards(planeLimit.transform.position, destinationLimitPos, cameraSpeed * Time.deltaTime * cameraMoveDistance);
         if (destinationPos == updatedPos)
         {
@@ -660,7 +660,6 @@ public class PlayerController : MonoBehaviour
             cameraMoveDistance = 0;
         }
 
-        //planeLimit.transform.position = updatedLimitPos;
         gameCamera.transform.position = updatedPos;
     }
 
@@ -721,6 +720,10 @@ public class PlayerController : MonoBehaviour
     private void SetJumpForce(float newForce)
     {
         jumpForce = newForce;
+    }
+
+    public int GetCollisionCounter(){
+        return collisions;
     }
 
 }

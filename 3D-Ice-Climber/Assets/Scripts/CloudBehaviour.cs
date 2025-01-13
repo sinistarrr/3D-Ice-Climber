@@ -5,29 +5,24 @@ using UnityEngine;
 public class CloudBehaviour : MonoBehaviour
 {   
     public float speed = 5.0f;
-    private bool isMovingOnTheRight;
+    private bool isMovingOnTheRight = false;
     private float xBound = 22.0f;
     // Start is called before the first frame update
     void Start()
     {
+        speed = Random.Range(2.0f, 7.0f);
         transform.position = new Vector3(Random.Range(-xBound+1, xBound-1), transform.position.y, transform.position.z);
-        if(Random.Range(0, 2) == 0){
-            isMovingOnTheRight = false;
-        }
-        else{
-            isMovingOnTheRight = true;
-        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        moveCloudHorizontally();
-        constraintCloudPosition();
+        MoveCloudHorizontally();
+        ConstraintCloudPosition();
     }
 
     // provides horizontal movement to the cloud
-    public void moveCloudHorizontally(){
+    public void MoveCloudHorizontally(){
         if(isMovingOnTheRight){
             transform.Translate(Vector3.right * speed * Time.deltaTime, Space.World);
         }
@@ -37,7 +32,7 @@ public class CloudBehaviour : MonoBehaviour
     }
 
     // X axis bound checking to prevent cloud from going out of bounds
-    private void constraintCloudPosition(){
+    private void ConstraintCloudPosition(){
         if(transform.position.x < -xBound){
             transform.position = new Vector3(xBound, transform.position.y, transform.position.z);
         }
@@ -48,6 +43,9 @@ public class CloudBehaviour : MonoBehaviour
 
     public bool IsMovingRight(){
         return isMovingOnTheRight;
+    }
+    public void SetIsMovingRight(bool value){
+        isMovingOnTheRight = value;
     }
 
     public float GetSpeed(){

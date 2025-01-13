@@ -134,7 +134,6 @@ GameObject:
   - component: {fileID: 67335110}
   - component: {fileID: 67335109}
   - component: {fileID: 67335108}
-  - component: {fileID: 67335111}
   m_Layer: 5
   m_Name: Easy
   m_TagString: Untagged
@@ -209,11 +208,11 @@ MonoBehaviour:
       - m_Target: {fileID: 2123473372}
         m_TargetAssemblyTypeName: SpawnManager, Assembly-CSharp
         m_MethodName: StartGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 1
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -256,19 +255,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 67335106}
   m_CullTransparentMesh: 1
---- !u!114 &67335111
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67335106}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f6a9daa81b89594088ed64835839366, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  difficulty: 1
 --- !u!1 &92551054
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,7 +400,6 @@ GameObject:
   - component: {fileID: 283403801}
   - component: {fileID: 283403800}
   - component: {fileID: 283403799}
-  - component: {fileID: 283403802}
   m_Layer: 5
   m_Name: Medium
   m_TagString: Untagged
@@ -489,11 +474,11 @@ MonoBehaviour:
       - m_Target: {fileID: 2123473372}
         m_TargetAssemblyTypeName: SpawnManager, Assembly-CSharp
         m_MethodName: StartGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 2
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -536,19 +521,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 283403797}
   m_CullTransparentMesh: 1
---- !u!114 &283403802
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 283403797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f6a9daa81b89594088ed64835839366, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  difficulty: 2
 --- !u!1 &382677769
 GameObject:
   m_ObjectHideFlags: 0
@@ -2299,7 +2271,7 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 0.005
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -2395,7 +2367,7 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 0.005
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -2491,7 +2463,7 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 0.005
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -2719,7 +2691,6 @@ GameObject:
   - component: {fileID: 1142142796}
   - component: {fileID: 1142142795}
   - component: {fileID: 1142142794}
-  - component: {fileID: 1142142797}
   m_Layer: 5
   m_Name: Hard
   m_TagString: Untagged
@@ -2794,11 +2765,11 @@ MonoBehaviour:
       - m_Target: {fileID: 2123473372}
         m_TargetAssemblyTypeName: SpawnManager, Assembly-CSharp
         m_MethodName: StartGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 3
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -2841,19 +2812,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1142142792}
   m_CullTransparentMesh: 1
---- !u!114 &1142142797
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1142142792}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f6a9daa81b89594088ed64835839366, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  difficulty: 3
 --- !u!1 &1226056072
 GameObject:
   m_ObjectHideFlags: 0
@@ -3088,8 +3046,8 @@ Transform:
   m_GameObject: {fileID: 1242356853}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 94.9, z: 0}
-  m_LocalScale: {x: 5, y: 1, z: 20}
+  m_LocalPosition: {x: 0, y: 136.4, z: 0}
+  m_LocalScale: {x: 5, y: 1, z: 28.64}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1408101074}
@@ -4559,6 +4517,10 @@ MonoBehaviour:
   manualScreen: {fileID: 1922814259}
   titleButtons: {fileID: 2027162379}
   difficultyButtons: {fileID: 402917095}
+  ufoPrefabs:
+  - {fileID: 7346407888795003772, guid: fc9a727bfdaed8942bdf5a934444668a, type: 3}
+  - {fileID: 217125345436216131, guid: 8ba72db996d62064a9af1f300ff98a39, type: 3}
+  - {fileID: 8950949205811237011, guid: b9a1b12327187bc4fbb3900afbf4d068, type: 3}
   menuButtonClickSound: {fileID: 8300000, guid: b9f0c283bed9b4ce29f3ba7ca4c2edc4, type: 3}
   cloudParticle: {fileID: 3712298786234418515, guid: 3fd5555088952419ebf0eb82e9096fa5, type: 3}
   originBlockPosition: {x: -16.5, y: -2, z: -0.5}
