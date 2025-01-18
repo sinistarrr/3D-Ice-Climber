@@ -20,7 +20,7 @@ public class FallingIceBehaviour : MonoBehaviour
     private float speed = 0;//Don't touch this
     private float maxSpeed = 30;//This is the maximum speed that the object will achieve
     private float acceleration = 12;//How fast will object reach a maximum speed
-    private float deceleration = 10;//How fast will object reach a speed of 0
+    // private float deceleration = 10;//How fast will object reach a speed of 0
     public bool isCurrentlyMovingDown = false;
     public bool isGrowing = false;
     // Start is called before the first frame update

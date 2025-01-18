@@ -3,7 +3,18 @@ guid: e040f61aaa62ce142abe78bbf629c014
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - blockExplosionParticle: {instanceID: 0}
+  - chickenExplosionParticle: {instanceID: 0}
+  - groundLandingParticle: {instanceID: 0}
+  - playerDirtParticle: {instanceID: 0}
+  - collectibleExplodeParticle: {instanceID: 0}
+  - starParticle: {instanceID: 0}
+  - flyingBlock: {instanceID: 0}
+  - jumpSound: {instanceID: 0}
+  - deathSound: {instanceID: 0}
+  - collectibleSound: {instanceID: 0}
+  - victorySound: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

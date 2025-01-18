@@ -50,10 +50,9 @@ public class PlayerController : MonoBehaviour
     private float rowHeight;
     private bool cloudLevelStateActivated = false;
     private bool isOnCloud = false;
-    private bool playerReachedFourthStage = false;
     private int playerHP;
     private static System.Random rng = new System.Random();
-    private bool plyHasReachedFinalStage = false;
+
 
     public enum DeathCause
     {
@@ -207,7 +206,9 @@ public class PlayerController : MonoBehaviour
         // Destruction of Block
         if ((Math.Abs(collision.contacts[0].point.y - (transform.position.y + GetComponent<Collider>().bounds.size.y)) <= 0.05f) && (Math.Round(collision.contacts[0].point.y, 2) == Math.Round(parentOfBlockGameObject.transform.position.y - collision.gameObject.GetComponent<Collider>().bounds.size.y / 2, 2)))
         {
+            Debug.Log("HELLO THERE");
             ManageSendingBlockFlying(parentOfBlockGameObject);
+            Debug.Log("HELLO THERE2");
             parentOfBlockGameObject.SetActive(false);
             playerAnim.enabled = false;
             DecreaseCollisionCounter();
@@ -395,10 +396,10 @@ public class PlayerController : MonoBehaviour
             float height;
             int i = 1;
 
-            // If platform is a cloud, we get the one below.
+            // If platform is a cloud, we get the one above.
             while (platform.Item2.Count() == 0)
             {
-                platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow() - i];
+                platform = spawnManager.cloudLevelPlatforms[line - spawnManager.GetMaxRow() + i];
                 i++;
             }
             cloudLevelGround = platform.Item2.ToList();

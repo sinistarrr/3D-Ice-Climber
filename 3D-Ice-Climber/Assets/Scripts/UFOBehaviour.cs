@@ -12,7 +12,6 @@ public class UFOBehaviour : MonoBehaviour
     private int shootingStep = 0;
     private float ufoHeightMargin = 6.0f;
     private float ufoEnteringPhaseSpeed = 3.0f;
-    private float ufoLeftRightMovingSpeed = 1.0f;
     private float xRange = 13.0f;
     private float laserScaleChangeSpeed = 20.0f;
     private int numberOfMovementsToDo;
@@ -26,10 +25,8 @@ public class UFOBehaviour : MonoBehaviour
     private bool hasStartedMoveToPos = false;
     private bool ufoIsActivated = false;
     private bool entersAudioHasBeenPlayed = false;
-    private bool movesAudioHasBeenPlayed = false;
     private bool shootingAudioHasBeenPlayed = false;
     private bool leavingAudioHasBeenPlayed = false;
-    private Vector3 originalUFOTransformPosition;
     private GameObject transparentLaser;
     private GameObject laser;
     private SpawnManager spawnManager;
@@ -124,9 +121,7 @@ public class UFOBehaviour : MonoBehaviour
         blinkingIsFinished = false;
         reachedHorizontalPosition = false;
         hasStartedMoveToPos = false;
-        originalUFOTransformPosition = transform.position;
         entersAudioHasBeenPlayed = false;
-        movesAudioHasBeenPlayed = false;
         shootingAudioHasBeenPlayed = false;
         leavingAudioHasBeenPlayed = false;
         gameObject.SetActive(true);

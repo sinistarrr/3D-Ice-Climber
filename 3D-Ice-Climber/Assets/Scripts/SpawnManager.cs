@@ -3,14 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
-using Unity.VisualScripting;
-using UnityEditor.Search;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Rendering.PostProcessing;
-using System.Numerics;
 using Vector3 = UnityEngine.Vector3;
 using Quaternion = UnityEngine.Quaternion;
 
@@ -67,7 +64,6 @@ public class SpawnManager : MonoBehaviour
     private bool cloudLevelPhase = false;
     private int midPhaseLineLimit = 15;
     private int hardPhaseLineLimit = 31;
-    private int totalCloudLevelPlatforms = 0;
     private float verticalLimitPosition = -5.0f;
     private float cloudLevelStartingHeight;
     private bool ufoIsInUse = false;
@@ -77,6 +73,8 @@ public class SpawnManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Test");
+        Debug.developerConsoleVisible = true;
         gameCamera = Camera.main;
         BoundsVariablesInit();
         BreakableBlockVariablesInit();
@@ -212,7 +210,7 @@ public class SpawnManager : MonoBehaviour
         cloudLevelStartingHeight = maxRowCount * rowHeight;
         score = 0;
         UpdateScore(0);
-        UpdateHP(99 - difficulty);
+        UpdateHP(3);
         // UpdateHP(3 - difficulty);
         UpdateFloor(0);
     }
